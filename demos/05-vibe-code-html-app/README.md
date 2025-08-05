@@ -1,5 +1,8 @@
 # Demo 5: Let's Vibe Code a Useful HTML/JS App
 
+- Live session chats: 
+  - https://claude.ai/share/3d27f5d6-e43b-47ff-bbbc-cfd8e94ab98c
+
 ## Overview
 
 This demo shows vibe coding in action by building complete, useful applications entirely through AI assistance. Each app demonstrates different aspects of vibe coding while creating something genuinely practical.

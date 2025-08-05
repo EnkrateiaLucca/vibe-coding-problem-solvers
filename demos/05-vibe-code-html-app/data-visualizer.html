@@ -298,6 +298,36 @@
             <p>Transform your data into beautiful charts instantly</p>
         </div>
 
+        <div class="stats" id="dataStats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-number" id="dataPointsCount">0</div>
+                <div class="stat-label">Data Points</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dataAverage">0</div>
+                <div class="stat-label">Average Value</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dataMax">0</div>
+                <div class="stat-label">Maximum</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dataMin">0</div>
+                <div class="stat-label">Minimum</div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-wrapper">
+                <div class="empty-chart" id="emptyChart">
+                    <h3>📈 Ready to visualize!</h3>
+                    <p>Enter your data below and click "Generate Chart" to get started.</p>
+                    <p style="margin-top: 10px; font-size: 14px; color: #adb5bd;">Try one of the sample datasets for a quick demo.</p>
+                </div>
+                <canvas id="dataChart" style="display: none;"></canvas>
+            </div>
+        </div>
+
         <div class="controls">
             <div class="control-group">
                 <div class="input-section">
@@ -361,36 +391,6 @@ March,120"></textarea>
                         <button class="btn btn-success" onclick="exportData()">📄 Export Data</button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="stats" id="dataStats" style="display: none;">
-            <div class="stat-card">
-                <div class="stat-number" id="dataPointsCount">0</div>
-                <div class="stat-label">Data Points</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="dataAverage">0</div>
-                <div class="stat-label">Average Value</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="dataMax">0</div>
-                <div class="stat-label">Maximum</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="dataMin">0</div>
-                <div class="stat-label">Minimum</div>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <div class="chart-wrapper">
-                <div class="empty-chart" id="emptyChart">
-                    <h3>📈 Ready to visualize!</h3>
-                    <p>Enter your data above and click "Generate Chart" to get started.</p>
-                    <p style="margin-top: 10px; font-size: 14px; color: #adb5bd;">Try one of the sample datasets for a quick demo.</p>
-                </div>
-                <canvas id="dataChart" style="display: none;"></canvas>
             </div>
         </div>
     </div>
