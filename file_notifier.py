@@ -1,3 +1,5 @@
+# https://docs.astral.sh/uv/
+# https://docs.astral.sh/uv/guides/scripts/
 #!/usr/bin/env -S uv run --script
 # /// script
 # dependencies = [

@@ -131,6 +131,11 @@ The training is organized into progressive modules:
 - Access to AI coding tools (Claude, ChatGPT, etc.)
 - Modern web browser for demos
 
+### Install uv (Python Package Manager)
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 ## 📖 Additional Resources
 
 ### Context Engineering Tools
