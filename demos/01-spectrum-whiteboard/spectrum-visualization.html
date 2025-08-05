@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Spectrum of AI-Augmented Development</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 40px;
+        }
+        
+        .spectrum-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 40px 0;
+            position: relative;
+        }
+        
+        .spectrum-arrow {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, #e74c3c, #f39c12, #27ae60);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 0;
+        }
+        
+        .approach {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            width: 30%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .approach:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .vibe-coding {
+            border-color: #e74c3c;
+            background-color: #fee;
+        }
+        
+        .ai-assisted {
+            border-color: #f39c12;
+            background-color: #fff8e1;
+        }
+        
+        .traditional {
+            border-color: #27ae60;
+            background-color: #e8f5e8;
+        }
+        
+        .approach h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+        
+        .metrics {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        
+        .metrics li {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .metric-label {
+            width: 120px;
+            font-weight: bold;
+        }
+        
+        .metric-bar {
+            flex: 1;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+        
+        .metric-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .tools-section {
+            margin-top: 50px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .tool-card {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tool-card:hover {
+            background: #e8f5e8;
+            transform: translateY(-2px);
+        }
+        
+        .tool-name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .tool-price {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .tool-category {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .details-panel {
+            display: none;
+            background: #f0f8ff;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .details-panel.active {
+            display: block;
+        }
+        
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 20px;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Spectrum of AI-Augmented Development</h1>
+        
+        <div class="spectrum-container">
+            <div class="spectrum-arrow"></div>
+            
+            <div class="approach vibe-coding" onclick="showDetails('vibe')">
+                <h3>🎲 Vibe Coding</h3>
+                <p><em>"Building software with an LLM without reviewing the code it writes"</em></p>
+                <ul class="metrics">
+                    <li>
+                        <span class="metric-label">Speed:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 95%; background: #e74c3c;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Control:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 20%; background: #e74c3c;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Understanding:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 15%; background: #e74c3c;"></div>
+                        </div>
+                    </li>
+                </ul>
+                <p><strong>Best for:</strong> Prototypes, experiments, throwaway projects</p>
+            </div>
+            
+            <div class="approach ai-assisted" onclick="showDetails('assisted')">
+                <h3>🤖 AI-Assisted Programming</h3>
+                <p><em>"Review, understand, and take accountability"</em></p>
+                <ul class="metrics">
+                    <li>
+                        <span class="metric-label">Speed:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 70%; background: #f39c12;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Control:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 70%; background: #f39c12;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Understanding:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 80%; background: #f39c12;"></div>
+                        </div>
+                    </li>
+                </ul>
+                <p><strong>Best for:</strong> Production code with AI acceleration</p>
+            </div>
+            
+            <div class="approach traditional" onclick="showDetails('traditional')">
+                <h3>👨‍💻 Traditional Engineering</h3>
+                <p><em>"Manual coding with full understanding"</em></p>
+                <ul class="metrics">
+                    <li>
+                        <span class="metric-label">Speed:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 30%; background: #27ae60;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Control:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 95%; background: #27ae60;"></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="metric-label">Understanding:</span>
+                        <div class="metric-bar">
+                            <div class="metric-fill" style="width: 95%; background: #27ae60;"></div>
+                        </div>
+                    </li>
+                </ul>
+                <p><strong>Best for:</strong> Critical systems, learning fundamentals</p>
+            </div>
+        </div>
+        
+        <div id="details-panel" class="details-panel">
+            <span class="close-btn" onclick="closeDetails()">×</span>
+            <div id="details-content"></div>
+        </div>
+        
+        <div class="tools-section">
+            <h2>AI Coding Tools Landscape</h2>
+            <div class="tools-grid">
+                <div class="tool-card" onclick="showToolDetails('claude-artifacts')">
+                    <div class="tool-name">Claude (Artifacts)</div>
+                    <div class="tool-price">$20/month</div>
+                    <div class="tool-category">Web Builder</div>
+                    <p>Safe sandbox prototyping</p>
+                </div>
+                
+                <div class="tool-card" onclick="showToolDetails('chatgpt-canvas')">
+                    <div class="tool-name">ChatGPT (Canvas)</div>
+                    <div class="tool-price">$20/month</div>
+                    <div class="tool-category">Web Builder</div>
+                    <p>Interactive code editing</p>
+                </div>
+                
+                <div class="tool-card" onclick="showToolDetails('cursor')">
+                    <div class="tool-name">Cursor</div>
+                    <div class="tool-price">$20/month</div>
+                    <div class="tool-category">IDE Integration</div>
+                    <p>Full codebase understanding</p>
+                </div>
+                
+                <div class="tool-card" onclick="showToolDetails('claude-code')">
+                    <div class="tool-name">Claude Code</div>
+                    <div class="tool-price">$17-200/month</div>
+                    <div class="tool-category">Terminal Agent</div>
+                    <p>Mobile coding, file access</p>
+                </div>
+                
+                <div class="tool-card" onclick="showToolDetails('aider')">
+                    <div class="tool-name">Aider</div>
+                    <div class="tool-price">API costs only</div>
+                    <div class="tool-category">Terminal Agent</div>
+                    <p>Git integration, autonomous</p>
+                </div>
+                
+                <div class="tool-card" onclick="showToolDetails('replit')">
+                    <div class="tool-name">Replit</div>
+                    <div class="tool-price">$7-25/month</div>
+                    <div class="tool-category">Cloud Environment</div>
+                    <p>Full dev environment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const detailsData = {
+            vibe: {
+                title: "Vibe Coding Deep Dive",
+                content: `
+                    <h3>What is Vibe Coding?</h3>
+                    <p>Building software with an LLM without reviewing the generated code. Fast, experimental, but risky for production.</p>
+                    
+                    <h4>Characteristics:</h4>
+                    <ul>
+                        <li>↓ Less systematicity</li>
+                        <li>↓ Less precision</li>
+                        <li>↓ Less review</li>
+                        <li>↓ Less understanding</li>
+                        <li>↓ Less control</li>
+                        <li>↑ <strong>Maximum speed</strong></li>
+                    </ul>
+                    
+                    <h4>When to Use:</h4>
+                    <ul>
+                        <li>Weekend projects</li>
+                        <li>Quick prototypes</li>
+                        <li>Learning experiments</li>
+                        <li>One-off scripts</li>
+                    </ul>
+                    
+                    <h4>⚠️ Warning:</h4>
+                    <p>Never use for production systems, security-critical code, or anything requiring long-term maintenance.</p>
+                `
+            },
+            assisted: {
+                title: "AI-Assisted Programming",
+                content: `
+                    <h3>The Balanced Approach</h3>
+                    <p>Using AI as a powerful assistant while maintaining oversight and understanding of all code.</p>
+                    
+                    <h4>Key Principles:</h4>
+                    <ul>
+                        <li>Review all generated code</li>
+                        <li>Understand before committing</li>
+                        <li>Take full accountability</li>
+                        <li>Use AI to accelerate, not replace thinking</li>
+                    </ul>
+                    
+                    <h4>Benefits:</h4>
+                    <ul>
+                        <li>○ Balanced systematicity</li>
+                        <li>○ Strategic review</li>
+                        <li>○ Guided understanding</li>
+                        <li>○ Shared control</li>
+                        <li>○ <strong>True augmentation</strong></li>
+                    </ul>
+                    
+                    <h4>Best Practices:</h4>
+                    <ul>
+                        <li>Maintain 70/30 rule (70% AI-assisted, 30% independent)</li>
+                        <li>Regular "AI-free" practice sessions</li>
+                        <li>Focus on understanding "why" not just "what"</li>
+                    </ul>
+                `
+            },
+            traditional: {
+                title: "Traditional Software Engineering",
+                content: `
+                    <h3>The Foundation</h3>
+                    <p>Writing code manually with full understanding and control. Essential for learning and critical systems.</p>
+                    
+                    <h4>Characteristics:</h4>
+                    <ul>
+                        <li>↑ More systematicity</li>
+                        <li>↑ More precision</li>
+                        <li>↑ More review</li>
+                        <li>↑ More understanding</li>
+                        <li>↑ More control</li>
+                        <li>↓ <strong>Slower process</strong></li>
+                    </ul>
+                    
+                    <h4>Still Essential For:</h4>
+                    <ul>
+                        <li>Learning fundamentals</li>
+                        <li>System architecture</li>
+                        <li>Performance optimization</li>
+                        <li>Security-critical code</li>
+                        <li>Complex debugging</li>
+                    </ul>
+                    
+                    <h4>The Risk:</h4>
+                    <p>Developers who don't adopt AI tools risk being left behind as the industry evolves.</p>
+                `
+            }
+        };
+        
+        const toolDetails = {
+            'claude-artifacts': {
+                name: 'Claude (Artifacts)',
+                description: 'Interactive coding environment with safe sandbox execution. Perfect for prototyping and learning.',
+                features: [
+                    'Real-time preview',
+                    'Safe sandbox environment',
+                    'No file system access',
+                    'Great for single-file apps'
+                ],
+                bestFor: 'Beginners, prototyping, safe experimentation'
+            },
+            'cursor': {
+                name: 'Cursor',
+                description: 'AI-powered IDE with full codebase understanding and context awareness.',
+                features: [
+                    'Full codebase context',
+                    'Multi-file editing',
+                    'Git integration',
+                    'VSCode-based interface'
+                ],
+                bestFor: 'Professional development, large projects'
+            },
+            'claude-code': {
+                name: 'Claude Code',
+                description: 'Terminal-based AI assistant with file system access and autonomous capabilities.',
+                features: [
+                    'File system access',
+                    'Command execution',
+                    'Mobile-friendly',
+                    'Autonomous task completion'
+                ],
+                bestFor: 'Advanced users, automation, mobile coding'
+            }
+        };
+        
+        function showDetails(type) {
+            const panel = document.getElementById('details-panel');
+            const content = document.getElementById('details-content');
+            const data = detailsData[type];
+            
+            content.innerHTML = `<h2>${data.title}</h2>${data.content}`;
+            panel.classList.add('active');
+        }
+        
+        function showToolDetails(toolId) {
+            const panel = document.getElementById('details-panel');
+            const content = document.getElementById('details-content');
+            const tool = toolDetails[toolId];
+            
+            if (tool) {
+                content.innerHTML = `
+                    <h2>${tool.name}</h2>
+                    <p>${tool.description}</p>
+                    <h4>Key Features:</h4>
+                    <ul>
+                        ${tool.features.map(f => `<li>${f}</li>`).join('')}
+                    </ul>
+                    <p><strong>Best for:</strong> ${tool.bestFor}</p>
+                `;
+                panel.classList.add('active');
+            }
+        }
+        
+        function closeDetails() {
+            document.getElementById('details-panel').classList.remove('active');
+        }
+    </script>
+</body>
+</html>

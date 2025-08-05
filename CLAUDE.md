@@ -1,22 +1,39 @@
-# CLAUDE.md - Remark.js Presentation Development Guide
+# CLAUDE.md
 
-This file contains essential instructions and guidelines for developing professional technical presentations using Remark.js. Follow these patterns exactly to maintain consistency across all presentations.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## IMPORTANT: Core Principles
-- ALWAYS use the established HTML template structure (DO NOT modify the basic template)
-- MAINTAIN consistent font styling across all presentations
-- FOLLOW the progressive reveal pattern using `--` separators
-- NEVER add unnecessary JavaScript or complex customizations
-- KEEP slides concise and focused on single concepts
+## Project Overview
 
-## Bash Commands
+This is an O'Reilly Live Training repository for teaching "Vibe Coding" - the practice of building software with LLMs without reviewing the generated code, as coined by Simon Willison. The repository contains presentation materials, tutorials, and assets for explaining AI-augmented development practices.
+
+## Common Commands
+
+### Presentation Development
 - `python -m http.server 8000`: Serve presentation locally for testing
-- `open http://localhost:8000/presentation.html`: Open presentation in browser
-- `cp presentation.html presentation-backup-$(date +%Y%m%d).html`: Backup presentation before major changes
+- `open http://localhost:8000/presentation.html`: Open presentation in browser (macOS)
+- `cp presentation/presentation.html presentation/presentation-backup-$(date +%Y%m%d).html`: Create backup before major changes
 
-## HTML Template Structure
+### Transcription (from global CLAUDE.md)
+- `transcribe ./path-to-video.mp4`: Transcribe video files
 
-YOU MUST use this exact HTML template for all presentations:
+## Repository Structure
+
+```
+vibe-coding-problem-solvers/
+├── presentation/              # Remark.js presentation files
+│   ├── presentation.html      # Main presentation
+│   └── *.pdf                  # Exported presentations
+├── assets/                    # Images and visual resources
+├── tutorials/                 # Tutorial documents and workflows
+├── apps/                      # Demo applications (currently empty)
+├── demos/                     # Demo files (currently empty)
+└── summary-vibes.md          # Comprehensive presentation summary
+```
+
+## Presentation Development with Remark.js
+
+### HTML Template Structure
+Use this exact HTML template for presentations:
 
 ```html
 <!DOCTYPE html>
@@ -320,4 +337,36 @@ Which framework do you prefer?
 </p>
 ```
 
-Remember: Consistency is key. These patterns have been refined across many successful presentations. Follow them exactly for professional results.
+## Key Concepts and Topics
+
+### Vibe Coding Definition
+"Building software with an LLM without reviewing the code it writes" - Simon Willison (2025)
+- Fast development for throwaway projects and prototypes
+- NOT for production systems or security-critical applications
+- Distinct from AI-assisted programming (which includes code review)
+
+### Core Vibe Coding Skills (from presentation)
+1. **Prompting**: Clear, specific instructions with examples
+2. **Context Management**: Strategic information loading
+3. **Capability Assignment**: Knowing what to delegate to AI
+4. **Vibe Checking**: Lightweight verification
+5. **Strategic Cognitive Offloading**: 70/30 rule
+6. **Personal Benchmarking**: Custom evaluation frameworks
+7. **Agentic Task Orchestration**: Coordinating AI agents
+
+## Presentation-Specific Guidelines
+
+### Core Principles
+- Use the established HTML template structure (DO NOT modify)
+- Maintain consistent font styling across all presentations
+- Follow the progressive reveal pattern using `--` separators
+- Keep slides concise and focused on single concepts
+- Always highlight demos with lightgreen background
+
+### Important Content Notes
+- The presentation covers AI tools and their appropriate use cases
+- Focus on the distinction between vibe coding and AI-assisted programming
+- Include practical patterns and real-world case studies
+- Emphasize responsible AI development practices
+
+Remember: This is educational content about AI-augmented development. Always maintain professional standards and follow the established presentation patterns.
