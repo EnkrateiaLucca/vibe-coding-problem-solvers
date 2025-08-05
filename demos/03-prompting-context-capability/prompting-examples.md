@@ -1,5 +1,7 @@
 # Prompting Examples - From Bad to Excellent
 
+- Live Demo example chat: https://chatgpt.com/share/68922989-d834-8004-92fd-be9839089436
+
 ## The 6 Sub-Skills of Effective Prompting
 
 ### 1. Clear & Direct Instructions
