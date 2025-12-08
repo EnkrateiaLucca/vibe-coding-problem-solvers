@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Collector</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-secondary: #666666;
+            --accent: #4a90a4;
+            --accent-light: #e8f4f8;
+            --border: #dddddd;
+            --danger: #e74c3c;
+        }
+
+        [data-theme="dark"] {
+            --bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text: #eaeaea;
+            --text-secondary: #aaaaaa;
+            --accent: #4a90a4;
+            --accent-light: #1a3a4a;
+            --border: #333355;
+            --danger: #c0392b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        /* Form */
+        .add-form {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .form-row {
+                grid-template-columns: 2fr 1fr 1fr;
+            }
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-size: 1rem;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Tags */
+        .tags-section {
+            margin-bottom: 20px;
+        }
+
+        .tags-section h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            background-color: var(--accent-light);
+            color: var(--accent);
+            border-radius: 15px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tag:hover {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .tag.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        /* Quotes Grid */
+        .quotes-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .quotes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 900px) {
+            .quotes-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .quote-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .quote-text {
+            font-size: 1.1rem;
+            font-style: italic;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .quote-text::before {
+            content: '"';
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .quote-text::after {
+            content: '"';
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .quote-author {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .quote-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .quote-tags .tag {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+        }
+
+        .quote-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quote-actions button {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        /* Status message */
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .status.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Quote Collector</h1>
+        <div class="header-actions">
+            <button class="btn-secondary" onclick="exportQuotes()">Export JSON</button>
+            <button class="btn-secondary" onclick="toggleTheme()">Toggle Theme</button>
+        </div>
+    </header>
+
+    <div class="add-form">
+        <div class="form-row">
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label for="quoteText">Quote</label>
+                <textarea id="quoteText" placeholder="Enter the quote..."></textarea>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="quoteAuthor">Author</label>
+                <input type="text" id="quoteAuthor" placeholder="Who said it?">
+            </div>
+            <div class="form-group">
+                <label for="quoteTags">Tags</label>
+                <input type="text" id="quoteTags" placeholder="motivation, life">
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button class="btn-primary" onclick="saveQuote()" id="saveBtn" style="width: 100%;">Add Quote</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tags-section" id="tagsSection" style="display: none;">
+        <h3>Filter by Tag</h3>
+        <div class="tag-cloud" id="tagCloud"></div>
+    </div>
+
+    <div class="quotes-grid" id="quotesGrid"></div>
+
+    <div class="status" id="status"></div>
+
+    <script>
+        let quotes = JSON.parse(localStorage.getItem('quotes') || '[]');
+        let editingId = null;
+        let activeTag = null;
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function saveQuote() {
+            const text = document.getElementById('quoteText').value.trim();
+            const author = document.getElementById('quoteAuthor').value.trim();
+            const tagsInput = document.getElementById('quoteTags').value.trim();
+
+            if (!text) {
+                showStatus('Please enter a quote');
+                return;
+            }
+
+            const tags = tagsInput ? tagsInput.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
+
+            if (editingId) {
+                // Update existing
+                const index = quotes.findIndex(q => q.id === editingId);
+                if (index !== -1) {
+                    quotes[index] = { ...quotes[index], text, author, tags };
+                }
+                editingId = null;
+                document.getElementById('saveBtn').textContent = 'Add Quote';
+                showStatus('Quote updated!');
+            } else {
+                // Add new
+                quotes.push({
+                    id: generateId(),
+                    text,
+                    author: author || 'Unknown',
+                    tags,
+                    createdAt: new Date().toISOString()
+                });
+                showStatus('Quote added!');
+            }
+
+            localStorage.setItem('quotes', JSON.stringify(quotes));
+            clearForm();
+            render();
+        }
+
+        function clearForm() {
+            document.getElementById('quoteText').value = '';
+            document.getElementById('quoteAuthor').value = '';
+            document.getElementById('quoteTags').value = '';
+        }
+
+        function editQuote(id) {
+            const quote = quotes.find(q => q.id === id);
+            if (!quote) return;
+
+            document.getElementById('quoteText').value = quote.text;
+            document.getElementById('quoteAuthor').value = quote.author;
+            document.getElementById('quoteTags').value = quote.tags.join(', ');
+
+            editingId = id;
+            document.getElementById('saveBtn').textContent = 'Update Quote';
+            document.getElementById('quoteText').focus();
+        }
+
+        function deleteQuote(id) {
+            quotes = quotes.filter(q => q.id !== id);
+            localStorage.setItem('quotes', JSON.stringify(quotes));
+            render();
+            showStatus('Quote deleted');
+        }
+
+        function filterByTag(tag) {
+            activeTag = activeTag === tag ? null : tag;
+            render();
+        }
+
+        function getAllTags() {
+            const tagSet = new Set();
+            quotes.forEach(q => q.tags.forEach(t => tagSet.add(t)));
+            return Array.from(tagSet).sort();
+        }
+
+        function render() {
+            const allTags = getAllTags();
+            const tagsSection = document.getElementById('tagsSection');
+            const tagCloud = document.getElementById('tagCloud');
+
+            // Render tag cloud
+            if (allTags.length > 0) {
+                tagsSection.style.display = 'block';
+                tagCloud.innerHTML = allTags.map(tag =>
+                    `<span class="tag ${activeTag === tag ? 'active' : ''}" onclick="filterByTag('${tag}')">${tag}</span>`
+                ).join('');
+            } else {
+                tagsSection.style.display = 'none';
+            }
+
+            // Filter quotes
+            let filteredQuotes = activeTag
+                ? quotes.filter(q => q.tags.includes(activeTag))
+                : quotes;
+
+            // Sort by newest first
+            filteredQuotes = filteredQuotes.sort((a, b) =>
+                new Date(b.createdAt) - new Date(a.createdAt)
+            );
+
+            // Render quotes
+            const grid = document.getElementById('quotesGrid');
+
+            if (filteredQuotes.length === 0) {
+                grid.innerHTML = '<div class="empty-state">' +
+                    (activeTag ? 'No quotes with this tag' : 'No quotes yet. Add your first quote above!') +
+                    '</div>';
+                return;
+            }
+
+            grid.innerHTML = filteredQuotes.map(quote => `
+                <div class="quote-card">
+                    <div class="quote-text">${escapeHtml(quote.text)}</div>
+                    <div class="quote-author">— ${escapeHtml(quote.author)}</div>
+                    ${quote.tags.length > 0 ? `
+                        <div class="quote-tags">
+                            ${quote.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="quote-actions">
+                        <button class="btn-secondary" onclick="editQuote('${quote.id}')">Edit</button>
+                        <button class="btn-danger" onclick="deleteQuote('${quote.id}')">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function exportQuotes() {
+            const data = JSON.stringify(quotes, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'quotes.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatus('Quotes exported!');
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        }
+
+        function showStatus(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.classList.add('show');
+            setTimeout(() => status.classList.remove('show'), 2000);
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screenshot Reviewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      background: #16213e;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .counter {
+      background: #0f3460;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .counter span {
+      color: #4ecca3;
+      font-weight: bold;
+    }
+
+    button {
+      background: #4ecca3;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #3db892;
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: #0f3460;
+      color: #eee;
+    }
+
+    button.secondary:hover {
+      background: #1a4a7a;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 3px solid transparent;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .card.selected {
+      border-color: #4ecca3;
+      box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card-info {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      color: #aaa;
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-status {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #4ecca3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .card.selected .card-status {
+      background: #4ecca3;
+    }
+
+    .card.selected .card-status::after {
+      content: '✓';
+      color: #1a1a2e;
+      font-weight: bold;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 200;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    .modal.active { display: block; }
+
+    .modal-content {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #eee;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .export-list {
+      background: #0f3460;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      max-height: 400px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 300;
+      padding: 40px;
+      cursor: zoom-out;
+    }
+
+    .lightbox.active { display: flex; align-items: center; justify-content: center; }
+
+    .lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    .filter-btn.active {
+      background: #e94560;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Screenshot Reviewer</h1>
+    <div class="controls">
+      <div class="filter-bar">
+        <button class="secondary filter-btn active" data-filter="all">All</button>
+        <button class="secondary filter-btn" data-filter="selected">Selected</button>
+        <button class="secondary filter-btn" data-filter="unselected">Unselected</button>
+      </div>
+      <div class="counter">Selected: <span id="count">0</span> / <span id="total">0</span></div>
+      <button class="secondary" onclick="selectAll()">Select All</button>
+      <button class="secondary" onclick="deselectAll()">Deselect All</button>
+      <button onclick="exportSelected()">Export List</button>
+    </div>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Selected Files</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="export-list" id="exportList"></div>
+      <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <button class="secondary" onclick="downloadList()">Download as .txt</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="">
+  </div>
+
+  <script>
+    const images = [
+      "screenshots/slide-03-methodology-notes.png",
+      "screenshots/slide-04-what-youll-learn-today.png",
+      "screenshots/slide-07-the-critical-distinction.png",
+      "screenshots/slide-08-when-to-vibe-code.png",
+      "screenshots/slide-10-trade-offs-spectrum.png",
+      "screenshots/slide-11-tool-landscape-overview.png",
+      "screenshots/slide-15-skills-overview-4-core-skills.png",
+      "screenshots/slide-17-the-6-prompting-sub-skills.png",
+      "screenshots/slide-18-bad-vs-good-prompts.png",
+      "screenshots/slide-19-decomposition.png",
+      "screenshots/slide-20-examples---show-what-you-want.png",
+      "screenshots/slide-21-role-assignment.png",
+      "screenshots/slide-22-time-to-think.png",
+      "screenshots/slide-23-constraints.png",
+      "screenshots/slide-26-the-4-context-strategies.png",
+      "screenshots/slide-27-strategy-1---write-context.png",
+      "screenshots/slide-28-strategy-2---select-context.png",
+      "screenshots/slide-29-strategy-3---compress-context.png",
+      "screenshots/slide-30-strategy-4---isolate-context.png",
+      "screenshots/slide-31-gathering-context.png",
+      "screenshots/slide-32-context-anti-patterns.png",
+      "screenshots/slide-34-problemtooltask-framework.png",
+      "screenshots/slide-38-green-flags-vs-red-flags.png",
+      "screenshots/slide-39-when-vibe-checks-are-enough.png",
+      "screenshots/slide-43-the-setup-open-sauce-case-study.png",
+      "screenshots/slide-44-the-130mb-bug.png",
+      "screenshots/slide-45-what-this-demonstrates.png",
+      "screenshots/slide-49-pattern-1---start-with-prototypes.png",
+      "screenshots/slide-50-pattern-2---let-it-see-what-you-see.png",
+      "screenshots/slide-52-pattern-4---automate-repeatable-steps.png",
+      "screenshots/slide-53-pattern-5---raw-to-structured.png",
+      "screenshots/slide-57-dont-let-your-brain-rot.png",
+      "screenshots/slide-58-practice-plan.png",
+      "screenshots/slide-59-success-metrics.png",
+      "screenshots/slide-60-where-this-is-going---orchestration.png",
+      "screenshots/slide-61-key-takeaways.png",
+      "screenshots/slide-63-keep-vibing-keep-building.png",
+      "screenshots/slide-00-appendix-b-strategic-cognitive-offloading.png",
+      "screenshots/slide-00-appendix-c-personal-benchmarking.png",
+      "screenshots/slide-00-appendix-e-additional-patterns.png",
+      "screenshots/slide-00-appendix-f-cross-domain-thinking.png"
+    ];
+
+    let selected = new Set();
+    let currentFilter = 'all';
+
+    // Load saved selection from localStorage
+    const saved = localStorage.getItem('selectedScreenshots');
+    if (saved) {
+      selected = new Set(JSON.parse(saved));
+    }
+
+    function saveSelection() {
+      localStorage.setItem('selectedScreenshots', JSON.stringify([...selected]));
+    }
+
+    function getDisplayName(path) {
+      return path.split('/').pop().replace('.png', '').replace(/-/g, ' ');
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      const filtered = images.filter(img => {
+        if (currentFilter === 'selected') return selected.has(img);
+        if (currentFilter === 'unselected') return !selected.has(img);
+        return true;
+      });
+
+      filtered.forEach(img => {
+        const card = document.createElement('div');
+        card.className = `card ${selected.has(img) ? 'selected' : ''}`;
+        card.innerHTML = `
+          <img src="${img}" alt="${getDisplayName(img)}" onclick="openLightbox(event, '${img}')">
+          <div class="card-info">
+            <span class="card-title">${getDisplayName(img)}</span>
+            <div class="card-status"></div>
+          </div>
+        `;
+        card.addEventListener('click', (e) => {
+          if (e.target.tagName !== 'IMG') {
+            toggleSelect(img);
+          }
+        });
+        grid.appendChild(card);
+      });
+
+      updateCounter();
+    }
+
+    function toggleSelect(img) {
+      if (selected.has(img)) {
+        selected.delete(img);
+      } else {
+        selected.add(img);
+      }
+      saveSelection();
+      renderGrid();
+    }
+
+    function updateCounter() {
+      document.getElementById('count').textContent = selected.size;
+      document.getElementById('total').textContent = images.length;
+    }
+
+    function selectAll() {
+      images.forEach(img => selected.add(img));
+      saveSelection();
+      renderGrid();
+    }
+
+    function deselectAll() {
+      selected.clear();
+      saveSelection();
+      renderGrid();
+    }
+
+    function exportSelected() {
+      const list = [...selected].sort().map(f => f.split('/').pop()).join('\n');
+      document.getElementById('exportList').textContent = list || '(No images selected)';
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    function copyToClipboard() {
+      const text = document.getElementById('exportList').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      });
+    }
+
+    function downloadList() {
+      const text = document.getElementById('exportList').textContent;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'selected-screenshots.txt';
+      a.click();
+    }
+
+    function openLightbox(e, img) {
+      e.stopPropagation();
+      document.getElementById('lightboxImg').src = img;
+      document.getElementById('lightbox').classList.add('active');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+    }
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderGrid();
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+        closeModal();
+      }
+    });
+
+    // Initial render
+    renderGrid();
+  </script>
+</body>
+</html>
