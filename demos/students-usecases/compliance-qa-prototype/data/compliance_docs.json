@@ -1,0 +1,109 @@
+{
+  "documents": [
+    {
+      "id": "nist-pr-aa-01",
+      "source": "NIST CSF 2.0",
+      "section": "PR.AA - Identity Management, Authentication, and Access Control",
+      "title": "Access Control Requirements",
+      "content": "Access to assets and associated facilities is limited to authorized users, processes, and devices. This includes managing identities and credentials, authenticating users and devices, and managing access permissions and authorizations. Organizations should implement multi-factor authentication for privileged accounts and remote access."
+    },
+    {
+      "id": "nist-pr-aa-02",
+      "source": "NIST CSF 2.0",
+      "section": "PR.AA - Identity Management, Authentication, and Access Control",
+      "title": "Role-Based Access Control",
+      "content": "Access permissions and authorizations are managed using role-based access control (RBAC) or attribute-based access control (ABAC). Permissions are based on job function and follow the principle of least privilege. Users are granted only the minimum access necessary to perform their duties."
+    },
+    {
+      "id": "nist-pr-aa-03",
+      "source": "NIST CSF 2.0",
+      "section": "PR.AA - Identity Management, Authentication, and Access Control",
+      "title": "Authentication Mechanisms",
+      "content": "Identities are proofed and bound to credentials based on the context of interactions. Strong authentication mechanisms include multi-factor authentication (MFA) combining something you know (password), something you have (token), and something you are (biometrics). Credentials are protected from unauthorized disclosure and modification."
+    },
+    {
+      "id": "nist-de-cm-01",
+      "source": "NIST CSF 2.0",
+      "section": "DE.CM - Continuous Monitoring",
+      "title": "Security Monitoring",
+      "content": "Assets are monitored to find anomalies, indicators of compromise, and other potentially adverse events. This includes monitoring network communications, user behavior, and system activities. Audit logs are collected, retained, and analyzed to detect unauthorized access attempts."
+    },
+    {
+      "id": "nist-de-ae-01",
+      "source": "NIST CSF 2.0",
+      "section": "DE.AE - Adverse Event Analysis",
+      "title": "Audit Log Analysis",
+      "content": "Information from multiple sources is analyzed to identify anomalies and potential security incidents. Audit logs should capture user authentication events, access control decisions, administrative actions, and system changes. Log retention periods should meet regulatory and organizational requirements."
+    },
+    {
+      "id": "nist-gv-po-01",
+      "source": "NIST CSF 2.0",
+      "section": "GV.PO - Policy",
+      "title": "Access Control Policies",
+      "content": "Organizational cybersecurity policy is established, communicated, and enforced. Access control policies define how access to systems and data is granted, modified, and revoked. Policies should address privileged access management, separation of duties, and periodic access reviews."
+    },
+    {
+      "id": "iso-a9-1",
+      "source": "ISO 27001:2022",
+      "section": "A.9 - Access Control",
+      "title": "Access Control Policy",
+      "content": "An access control policy shall be established, documented and reviewed based on business and information security requirements. Access to information and application system functions shall be restricted in accordance with the access control policy. Formal procedures shall control the allocation of access rights."
+    },
+    {
+      "id": "iso-a9-2",
+      "source": "ISO 27001:2022",
+      "section": "A.9 - Access Control",
+      "title": "User Access Management",
+      "content": "A formal user registration and de-registration process shall be implemented to enable assignment of access rights. A formal user access provisioning process shall be implemented to assign or revoke access rights. The allocation and use of privileged access rights shall be restricted and controlled."
+    },
+    {
+      "id": "iso-a9-3",
+      "source": "ISO 27001:2022",
+      "section": "A.9 - Access Control",
+      "title": "User Responsibilities",
+      "content": "Users shall be required to follow the organization's practices in the use of secret authentication information. Access to systems and applications shall be controlled by a secure log-on procedure. Password management systems shall be interactive and ensure quality passwords."
+    },
+    {
+      "id": "iso-a9-4",
+      "source": "ISO 27001:2022",
+      "section": "A.9 - Access Control",
+      "title": "System and Application Access Control",
+      "content": "Access to information and application system functions shall be restricted in accordance with the access control policy. Where required by the access control policy, access to systems and applications shall be controlled by a secure log-on procedure. Utility programs that might be capable of overriding system and application controls shall be restricted."
+    },
+    {
+      "id": "iso-a12-4",
+      "source": "ISO 27001:2022",
+      "section": "A.12.4 - Logging and Monitoring",
+      "title": "Event Logging",
+      "content": "Event logs recording user activities, exceptions, faults and information security events shall be produced, kept and regularly reviewed. Logging facilities and log information shall be protected against tampering and unauthorized access. System administrator and system operator activities shall be logged and the logs protected and regularly reviewed."
+    },
+    {
+      "id": "iso-a12-5",
+      "source": "ISO 27001:2022",
+      "section": "A.12.4 - Logging and Monitoring",
+      "title": "Clock Synchronization",
+      "content": "The clocks of all relevant information processing systems within an organization or security domain shall be synchronized to a single reference time source. Accurate timestamps are essential for audit trail integrity and forensic investigations."
+    },
+    {
+      "id": "nist-pr-ds-01",
+      "source": "NIST CSF 2.0",
+      "section": "PR.DS - Data Security",
+      "title": "Data Protection",
+      "content": "Data-at-rest and data-in-transit are protected. Adequate cryptographic mechanisms protect the confidentiality and integrity of data. Administrative credentials and authentication tokens should be encrypted both at rest and in transit using industry-standard encryption algorithms."
+    },
+    {
+      "id": "iso-a10-1",
+      "source": "ISO 27001:2022",
+      "section": "A.10 - Cryptography",
+      "title": "Cryptographic Controls",
+      "content": "A policy on the use of cryptographic controls for protection of information shall be developed and implemented. Key management shall be in place to support the organization's use of cryptographic techniques. This includes protecting authentication credentials and session tokens."
+    },
+    {
+      "id": "nist-id-am-01",
+      "source": "NIST CSF 2.0",
+      "section": "ID.AM - Asset Management",
+      "title": "Asset Identification",
+      "content": "Physical devices and systems, software applications, and data flows are inventoried. Administrative accounts and privileged access should be inventoried and tracked separately. Regular reviews should verify that administrative access remains appropriate and necessary."
+    }
+  ]
+}

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Q&A - RAG Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .frameworks {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .framework-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .question-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .question-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .response-section {
+            display: none;
+        }
+
+        .response-section.visible {
+            display: block;
+        }
+
+        .response-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .response-header h2 {
+            font-size: 1.2rem;
+            color: #00d4ff;
+        }
+
+        .sources {
+            display: flex;
+            gap: 10px;
+        }
+
+        .source-tag {
+            background: rgba(123, 44, 191, 0.3);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            color: #d4a5ff;
+        }
+
+        .response-content {
+            color: #e4e4e4;
+            white-space: pre-wrap;
+        }
+
+        .snippets-section {
+            margin-top: 30px;
+        }
+
+        .snippets-header {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .snippets-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .snippet-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 3px solid #7b2cbf;
+        }
+
+        .snippet-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .snippet-source {
+            color: #00d4ff;
+            font-weight: 500;
+        }
+
+        .snippet-relevance {
+            color: #888;
+        }
+
+        .snippet-title {
+            font-weight: 500;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .snippet-content {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 40px;
+            color: #888;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .example-questions {
+            margin-top: 15px;
+        }
+
+        .example-questions p {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .example-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            margin: 4px;
+            cursor: pointer;
+            border-radius: 6px;
+            text-align: left;
+        }
+
+        .example-btn:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Compliance Q&A</h1>
+            <p class="subtitle">RAG-Powered Security Response Generator</p>
+            <div class="frameworks">
+                <span class="framework-badge">NIST CSF 2.0</span>
+                <span class="framework-badge">ISO 27001:2022</span>
+            </div>
+        </header>
+
+        <section class="question-section">
+            <label for="question">Customer Security Question</label>
+            <textarea id="question" placeholder="Enter a security question from your customer..."></textarea>
+
+            <div class="example-questions">
+                <p>Try an example:</p>
+                <button class="example-btn" onclick="setExample(0)">How do you protect administrative access?</button>
+                <button class="example-btn" onclick="setExample(1)">What audit logging do you have?</button>
+                <button class="example-btn" onclick="setExample(2)">How is data encrypted?</button>
+            </div>
+
+            <div class="btn-container">
+                <button class="btn-primary" id="submitBtn" onclick="submitQuestion()">
+                    Generate Response
+                </button>
+                <button class="btn-secondary" onclick="clearAll()">Clear</button>
+            </div>
+        </section>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>Searching compliance frameworks and generating response...</span>
+        </div>
+
+        <section id="responseSection" class="response-section">
+            <div class="response-card">
+                <div class="response-header">
+                    <h2>Vendor Response</h2>
+                    <div id="sources" class="sources"></div>
+                </div>
+                <div id="responseContent" class="response-content"></div>
+            </div>
+
+            <div class="snippets-section">
+                <div class="snippets-header">
+                    <span>Retrieved Compliance Framework Snippets</span>
+                </div>
+                <div id="snippets" class="snippets-grid"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const examples = [
+            "How does your product ensure that only authorized users can access administrative functions?",
+            "What kind of audit logging and monitoring capabilities does your product have?",
+            "How does your product protect sensitive data with encryption?"
+        ];
+
+        function setExample(index) {
+            document.getElementById('question').value = examples[index];
+        }
+
+        function clearAll() {
+            document.getElementById('question').value = '';
+            document.getElementById('responseSection').classList.remove('visible');
+            document.getElementById('error').style.display = 'none';
+        }
+
+        async function submitQuestion() {
+            const question = document.getElementById('question').value.trim();
+            if (!question) {
+                showError('Please enter a question');
+                return;
+            }
+
+            // UI state
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('responseSection').classList.remove('visible');
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to get response');
+                }
+
+                const data = await response.json();
+                displayResponse(data);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayResponse(data) {
+            // Display sources
+            const sourcesEl = document.getElementById('sources');
+            sourcesEl.innerHTML = data.sources
+                .map(s => `<span class="source-tag">${s}</span>`)
+                .join('');
+
+            // Display response
+            document.getElementById('responseContent').textContent = data.response;
+
+            // Display snippets
+            const snippetsEl = document.getElementById('snippets');
+            snippetsEl.innerHTML = data.relevant_snippets
+                .map(s => `
+                    <div class="snippet-card">
+                        <div class="snippet-meta">
+                            <span class="snippet-source">${s.source}</span>
+                            <span class="snippet-relevance">${Math.round(s.relevance * 100)}% relevant</span>
+                        </div>
+                        <div class="snippet-title">${s.title}</div>
+                        <div class="snippet-content">${s.content}</div>
+                    </div>
+                `).join('');
+
+            document.getElementById('responseSection').classList.add('visible');
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        // Allow Enter key to submit (with Ctrl/Cmd)
+        document.getElementById('question').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                submitQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
