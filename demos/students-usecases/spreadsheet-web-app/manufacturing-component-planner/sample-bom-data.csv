@@ -1,0 +1,26 @@
+machine_type,component,qty_per_machine,yr1_forecast,yr2_forecast,yr3_forecast,yr4_forecast,yr5_forecast,yr6_forecast,yr7_forecast,yr8_forecast,yr9_forecast,yr10_forecast
+Assembler Pro,Widget A,8,500,550,600,650,700,750,800,850,900,950
+Assembler Pro,Widget B,4,500,550,600,650,700,750,800,850,900,950
+Assembler Pro,Widget C,12,500,550,600,650,700,750,800,850,900,950
+Assembler Pro,Connector X,24,500,550,600,650,700,750,800,850,900,950
+Assembler Pro,Sensor Unit,6,500,550,600,650,700,750,800,850,900,950
+Fabricator Max,Widget A,5,300,330,360,390,420,450,480,510,540,570
+Fabricator Max,Widget B,10,300,330,360,390,420,450,480,510,540,570
+Fabricator Max,Widget D,8,300,330,360,390,420,450,480,510,540,570
+Fabricator Max,Connector X,16,300,330,360,390,420,450,480,510,540,570
+Fabricator Max,Power Module,2,300,330,360,390,420,450,480,510,540,570
+Processor Unit,Widget A,3,800,850,900,950,1000,1050,1100,1150,1200,1250
+Processor Unit,Widget C,6,800,850,900,950,1000,1050,1100,1150,1200,1250
+Processor Unit,Connector X,20,800,850,900,950,1000,1050,1100,1150,1200,1250
+Processor Unit,Sensor Unit,4,800,850,900,950,1000,1050,1100,1150,1200,1250
+Processor Unit,Control Board,1,800,850,900,950,1000,1050,1100,1150,1200,1250
+Handler System,Widget B,6,200,220,240,260,280,300,320,340,360,380
+Handler System,Widget D,4,200,220,240,260,280,300,320,340,360,380
+Handler System,Connector X,32,200,220,240,260,280,300,320,340,360,380
+Handler System,Power Module,3,200,220,240,260,280,300,320,340,360,380
+Handler System,Control Board,2,200,220,240,260,280,300,320,340,360,380
+Compact Line,Widget A,2,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100
+Compact Line,Widget B,2,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100
+Compact Line,Widget C,4,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100
+Compact Line,Connector X,8,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100
+Compact Line,Sensor Unit,2,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100

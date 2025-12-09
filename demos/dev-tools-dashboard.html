@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dev Tools Survey - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chart-card h3 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .tool-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tool-list h3 {
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .tool-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .tool-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(5px);
+        }
+
+        .tool-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tool-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .tool-count {
+            background: rgba(79, 195, 247, 0.2);
+            color: #4fc3f7;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .category-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        .category-ai { background: rgba(156, 39, 176, 0.3); color: #ce93d8; }
+        .category-ide { background: rgba(76, 175, 80, 0.3); color: #a5d6a7; }
+        .category-editor { background: rgba(255, 152, 0, 0.3); color: #ffcc80; }
+        .category-platform { background: rgba(33, 150, 243, 0.3); color: #90caf9; }
+
+        .responses-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+        }
+
+        .response-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4fc3f7, #7c4dff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .response-content {
+            flex: 1;
+        }
+
+        .response-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tool-tag {
+            background: rgba(79, 195, 247, 0.15);
+            color: #4fc3f7;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 600px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛠️ Student Dev Tools Survey</h1>
+            <p class="subtitle">O'Reilly Vibe Coding Training - December 2024</p>
+        </header>
+
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📊 Top Tools by Mentions</h3>
+                <div class="chart-container">
+                    <canvas id="toolsBarChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>🏷️ Tools by Category</h3>
+                <div class="chart-container">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="tool-list">
+            <h3>📋 All Tools Ranked</h3>
+            <div id="toolsList"></div>
+        </div>
+
+        <div class="responses-section">
+            <h3>💬 Individual Responses (<span id="responseCount"></span>)</h3>
+            <div id="responsesList"></div>
+        </div>
+
+        <footer>
+            <p>Data collected during live training session</p>
+        </footer>
+    </div>
+
+    <script>
+        // Raw survey data
+        const rawResponses = [
+            { initials: "RM", tools: "VS Code" },
+            { initials: "NR", tools: "Jetbrains AI" },
+            { initials: "JV", tools: "cursor, windsurf, chatgpt" },
+            { initials: "JZ", tools: "chatgpt" },
+            { initials: "SE", tools: "Lovable" },
+            { initials: "LH", tools: "Notepad++" },
+            { initials: "ND", tools: "cursor" },
+            { initials: "RM", tools: "GitHub Pro, ChatGPT, Gemini" },
+            { initials: "WC", tools: "Cursor, VSCode and Webstorm" },
+            { initials: "LY", tools: "Company only permits a ChatGPT instance" },
+            { initials: "IB", tools: "vs code, with claude code and chatgpt codex extension, cursor" },
+            { initials: "CA", tools: "vs code, antigravity" },
+            { initials: "PR", tools: "antigravity" },
+            { initials: "NR", tools: "Webstorm is also a Jetbrains product :)" },
+            { initials: "DS", tools: "jetbrains and copiolt" },
+            { initials: "VN", tools: "cursor, chatgbt" },
+            { initials: "VB", tools: "VS Code, ChatGPT" },
+            { initials: "WM", tools: "Warp.dev" },
+            { initials: "IB", tools: "ai studio google is awesome also" }
+        ];
+
+        // Tool normalization and categorization
+        const toolNormalization = {
+            'chatgpt': 'ChatGPT',
+            'chatgbt': 'ChatGPT',
+            'vs code': 'VS Code',
+            'vscode': 'VS Code',
+            'cursor': 'Cursor',
+            'jetbrains': 'JetBrains',
+            'jetbrains ai': 'JetBrains AI',
+            'webstorm': 'WebStorm',
+            'windsurf': 'Windsurf',
+            'gemini': 'Gemini',
+            'github pro': 'GitHub Copilot',
+            'copiolt': 'GitHub Copilot',
+            'copilot': 'GitHub Copilot',
+            'claude code': 'Claude Code',
+            'notepad++': 'Notepad++',
+            'lovable': 'Lovable',
+            'antigravity': 'Antigravity',
+            'warp.dev': 'Warp',
+            'warp': 'Warp',
+            'ai studio google': 'Google AI Studio',
+            'google ai studio': 'Google AI Studio'
+        };
+
+        const toolCategories = {
+            'ChatGPT': 'ai',
+            'Gemini': 'ai',
+            'Claude Code': 'ai',
+            'JetBrains AI': 'ai',
+            'GitHub Copilot': 'ai',
+            'Google AI Studio': 'ai',
+            'VS Code': 'ide',
+            'Cursor': 'ide',
+            'WebStorm': 'ide',
+            'JetBrains': 'ide',
+            'Windsurf': 'ide',
+            'Notepad++': 'editor',
+            'Warp': 'platform',
+            'Lovable': 'platform',
+            'Antigravity': 'platform'
+        };
+
+        const categoryColors = {
+            'ai': '#ce93d8',
+            'ide': '#a5d6a7',
+            'editor': '#ffcc80',
+            'platform': '#90caf9'
+        };
+
+        const categoryLabels = {
+            'ai': 'AI Assistant',
+            'ide': 'IDE',
+            'editor': 'Editor',
+            'platform': 'Platform'
+        };
+
+        // Parse and normalize tools
+        function parseTools(toolString) {
+            const tools = [];
+            const normalized = toolString.toLowerCase()
+                .replace(/with|and|also|is awesome|instance|only permits a|company|extension|product/gi, ',')
+                .split(/[,\n]+/)
+                .map(t => t.trim())
+                .filter(t => t.length > 1);
+
+            normalized.forEach(tool => {
+                const normalizedName = toolNormalization[tool] ||
+                    Object.keys(toolNormalization).find(key => tool.includes(key) && toolNormalization[key]) &&
+                    toolNormalization[Object.keys(toolNormalization).find(key => tool.includes(key))];
+
+                if (normalizedName && !tools.includes(normalizedName)) {
+                    tools.push(normalizedName);
+                } else if (!normalizedName && tool.length > 2) {
+                    // Capitalize first letter for unknown tools
+                    const capitalized = tool.charAt(0).toUpperCase() + tool.slice(1);
+                    if (!tools.includes(capitalized)) {
+                        tools.push(capitalized);
+                    }
+                }
+            });
+
+            return tools;
+        }
+
+        // Process all responses
+        const processedResponses = rawResponses.map(r => ({
+            ...r,
+            parsedTools: parseTools(r.tools)
+        }));
+
+        // Count tools
+        const toolCounts = {};
+        processedResponses.forEach(r => {
+            r.parsedTools.forEach(tool => {
+                toolCounts[tool] = (toolCounts[tool] || 0) + 1;
+            });
+        });
+
+        // Sort tools by count
+        const sortedTools = Object.entries(toolCounts)
+            .sort((a, b) => b[1] - a[1]);
+
+        // Count categories
+        const categoryCounts = {};
+        sortedTools.forEach(([tool, count]) => {
+            const category = toolCategories[tool] || 'other';
+            categoryCounts[category] = (categoryCounts[category] || 0) + count;
+        });
+
+        // Render stats
+        const totalResponses = rawResponses.length;
+        const totalTools = sortedTools.length;
+        const avgToolsPerStudent = (Object.values(toolCounts).reduce((a, b) => a + b, 0) / totalResponses).toFixed(1);
+        const topTool = sortedTools[0];
+
+        document.getElementById('statsRow').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-number">${totalResponses}</div>
+                <div class="stat-label">Total Responses</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${totalTools}</div>
+                <div class="stat-label">Unique Tools</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${avgToolsPerStudent}</div>
+                <div class="stat-label">Avg Tools/Student</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${topTool[1]}</div>
+                <div class="stat-label">Top: ${topTool[0]}</div>
+            </div>
+        `;
+
+        // Render tools list
+        const toolsListHTML = sortedTools.map(([tool, count]) => {
+            const category = toolCategories[tool] || 'other';
+            const categoryLabel = categoryLabels[category] || 'Other';
+            const color = categoryColors[category] || '#888';
+
+            return `
+                <div class="tool-item">
+                    <div class="tool-name">
+                        <div class="tool-icon" style="background: ${color}33; color: ${color}">
+                            ${tool.substring(0, 2).toUpperCase()}
+                        </div>
+                        <span>${tool}</span>
+                        <span class="category-badge category-${category}">${categoryLabel}</span>
+                    </div>
+                    <span class="tool-count">${count}</span>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('toolsList').innerHTML = toolsListHTML;
+
+        // Render responses
+        document.getElementById('responseCount').textContent = totalResponses;
+        const responsesHTML = processedResponses.map(r => `
+            <div class="response-card">
+                <div class="avatar">${r.initials}</div>
+                <div class="response-content">
+                    <div class="response-tools">
+                        ${r.parsedTools.map(t => `<span class="tool-tag">${t}</span>`).join('')}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('responsesList').innerHTML = responsesHTML;
+
+        // Bar Chart - Top Tools
+        const topToolsData = sortedTools.slice(0, 10);
+        new Chart(document.getElementById('toolsBarChart'), {
+            type: 'bar',
+            data: {
+                labels: topToolsData.map(t => t[0]),
+                datasets: [{
+                    label: 'Mentions',
+                    data: topToolsData.map(t => t[1]),
+                    backgroundColor: topToolsData.map(t => {
+                        const cat = toolCategories[t[0]] || 'other';
+                        return categoryColors[cat] || '#888';
+                    }),
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#888' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { color: '#e0e0e0' }
+                    }
+                }
+            }
+        });
+
+        // Pie Chart - Categories
+        const categoryData = Object.entries(categoryCounts).filter(([cat]) => cat !== 'other');
+        new Chart(document.getElementById('categoryPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: categoryData.map(([cat]) => categoryLabels[cat] || cat),
+                datasets: [{
+                    data: categoryData.map(([, count]) => count),
+                    backgroundColor: categoryData.map(([cat]) => categoryColors[cat]),
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#e0e0e0', padding: 15 }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

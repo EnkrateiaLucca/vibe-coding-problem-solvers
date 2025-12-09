@@ -1,372 +1,92 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-This is an O'Reilly Live Training repository for teaching "Vibe Coding" - the practice of building software with LLMs without reviewing the generated code, as coined by Simon Willison. The repository contains presentation materials, tutorials, and assets for explaining AI-augmented development practices.
+O'Reilly Live Training repository for teaching "Vibe Coding" - building software with LLMs without reviewing generated code (coined by Simon Willison, 2025). Instructor: Lucas Soares.
 
-## Common Commands
-
-### Presentation Development
-- `python -m http.server 8000`: Serve presentation locally for testing
-- `open http://localhost:8000/presentation.html`: Open presentation in browser (macOS)
-- `cp presentation/presentation.html presentation/presentation-backup-$(date +%Y%m%d).html`: Create backup before major changes
-
-### Transcription (from global CLAUDE.md)
-- `transcribe ./path-to-video.mp4`: Transcribe video files
+**Key distinction**: Vibe Coding (no code review, for prototypes) vs AI-Assisted Programming (with oversight, for production).
 
 ## Repository Structure
 
 ```
 vibe-coding-problem-solvers/
-├── presentation/              # Remark.js presentation files
-│   ├── presentation.html      # Main presentation
-│   └── *.pdf                  # Exported presentations
-├── assets/                    # Images and visual resources
-├── tutorials/                 # Tutorial documents and workflows
-├── apps/                      # Demo applications (currently empty)
-├── demos/                     # Demo files (currently empty)
-└── summary-vibes.md          # Comprehensive presentation summary
+├── presentation/                     # Remark.js slides + PDF export
+│   ├── presentation.html             # Main presentation
+│   ├── presentation-v2.html          # Updated version
+│   └── vibe-coding-slides-final.pdf  # Exported PDF
+├── demos/                            # 5 interactive learning modules
+│   ├── 01-prompting/                 # 6 prompting sub-skills + buggy_calculator.py
+│   ├── 02-context-management/        # 4 context strategies + tools reference
+│   ├── 03-vibe-checking/             # Verification techniques + employees.csv (500 records)
+│   ├── 04-case-study-app/            # Quote Collector app + building log + prompts
+│   └── 05-patterns/                  # 5 patterns + working UV scripts + sample data
+├── assets/                           # Visual resources
+│   ├── screenshots/                  # 49 presentation slide screenshots
+│   ├── screenshot-reviewer.html      # Interactive screenshot viewer
+│   └── vibe-coding-techniques-guide.md
+├── .claude/                          # Claude Code config
+│   └── agents/project-researcher.md  # Research agent definition
+├── summary-vibes.md                  # Comprehensive training summary
+├── generate_visuals.py               # Gemini API visual generator (needs GOOGLE_API_KEY)
+└── file_notifier.py                  # File change monitor utility
 ```
 
-## Presentation Development with Remark.js
+## Common Commands
 
-### HTML Template Structure
-Use this exact HTML template for presentations:
+```bash
+# Serve presentation locally
+python -m http.server 8000
+open http://localhost:8000/presentation/presentation.html
 
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Presentation Title</title>
-    <meta charset="utf-8">
-    <style>
-      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
-      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
-      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+# Run demo scripts (requires uv)
+uv run demos/05-patterns/scripts/csv-processor.py demos/05-patterns/sample-data/users.csv
+uv run demos/05-patterns/scripts/meeting-parser.py demos/05-patterns/sample-data/meeting-notes.txt
+uv run demos/05-patterns/scripts/resize-images.py <image-folder>
 
-      body { font-family: 'Droid Serif'; }
-      h1, h2, h3 {
-        font-family: 'Yanone Kaffeesatz';
-        font-weight: normal;
-      }
-      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
-    </style>
-  </head>
-  <body>
-    <textarea id="source">
-<!-- SLIDES GO HERE -->
-    </textarea>
-    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
-    </script>
-    <script>
-      var slideshow = remark.create();
-    </script>
-  </body>
-</html>
+# Test the buggy calculator (debugging exercise)
+python demos/01-prompting/samples/buggy_calculator.py
 ```
 
-## Slide Templates and Patterns
-
-### Title Slide Pattern
-```markdown
-class: center, middle
-
-# Presentation Title
-
-*Subtitle if needed*
-
-**By Lucas Soares**
-
-Date: MM/DD/YYYY
-```
-
-### Section Divider Pattern
-```markdown
----
-
-class: center, middle
-
-# Section Title
-
----
-```
-
-### Demo Slide Pattern (IMPORTANT: Always highlight demos)
-```markdown
----
-
-class: center, middle
-
-<h1>
-<span style="background-color: lightgreen">
-  Demo - Description of Demo
-</span>
-</h1>
-
----
-```
-
-### Speaker Introduction Slide
-```markdown
----
-
-# About Me
-
-.left-column[
-- **Role/Title**
-- Background point 1
---
-- Background point 2
---
-- Background point 3
---
-- Contact/Social info
-]
-
-.right-column[
-<img src="./profile-image.jpg" width="300px">
-]
-
----
-```
-
-### Code Example Slide Pattern
-```markdown
----
-
-# Topic Title
-
-Explanation text here
-
-```python
-# Code example
-def example_function():
-    return "example"
-```
-
---
-
-Key points about the code:
-- Point 1
---
-- Point 2
-
----
-```
-
-### Q&A and Break Slides
-```markdown
----
-
-class: center, middle
-
-# Q&A
-
----
-
-class: center, middle
-
-# Break 5 minutes
-
----
-```
-
-## Image Handling Guidelines
-
-ALWAYS use these patterns for images:
-
-### Centered Image
-```html
-<div style="text-align: center;">
-  <img src="./image-name.png" width="600px">
-</div>
-```
-
-### Image Paths
-- Local images: `./filename.png` (same directory as presentation.html)
-- Notebook assets: `../notebooks/assets-resources/filename.png`
-- NEVER use absolute paths
-
-## CSS Styling Patterns
-
-### Highlighting Important Content
-- Demo slides: `<span style="background-color: lightgreen">`
-- Warnings/Important: `<span style="background-color: yellow">`
-- Optional content: `<span style="color: red">`
-
-### Font Sizes for References
-```html
-<p style="font-size: 14px; margin-top: 20px;">
-  <a href='URL'>Reference Text</a>
-</p>
-```
-
-## Code Presentation Best Practices
-
-1. ALWAYS specify the language for syntax highlighting
-2. Keep code examples SHORT (max 10-15 lines per slide)
-3. Use progressive reveal (`--`) to explain complex code
-4. Include output/results when relevant
-
-Example:
-```markdown
-```python
-# Step 1: Import libraries
-import numpy as np
-```
---
-```python
-# Step 2: Create data
-data = np.array([1, 2, 3, 4, 5])
-```
---
-Output: `[1 2 3 4 5]`
-```
-
-## File Organization
-
-```
-presentation-folder/
-├── presentation.html          # Main presentation file
-├── profile-image.jpg         # Speaker profile image
-├── *.png/jpg/svg            # Local images
-└── presentation-backup-*.html # Backup files
-```
-
-## Workflow Instructions
-
-1. **Starting a New Presentation**
-   - Copy the HTML template above
-   - Update title, author, and date
-   - Create title slide first
-
-2. **Adding Content**
-   - Write slides in markdown within the `<textarea id="source">`
-   - Use `---` to separate slides
-   - Test frequently with local server
-
-3. **Before Major Changes**
-   - Create a backup using the backup command
-   - Test all demos and code examples
-   - Verify all image paths
-
-4. **Progressive Reveal Strategy**
-   - Use `--` to control information flow
-   - Reveal complex concepts step by step
-   - Don't overuse - max 3-4 reveals per slide
-
-## Common Presentation Structure
-
-1. Title Slide
-2. About Me/Speaker Introduction
-3. Agenda/Table of Contents
-4. Introduction/Context (2-3 slides)
-5. Main Content Sections:
-   - Concept explanation
-   - Visual diagram/image
-   - Code example
-   - Practical application/demo
-6. Q&A after each major section
-7. Summary/Key Takeaways
-8. References/Resources
-9. Thank You/Contact Info
-
-## Testing Checklist
-
-Before finalizing any presentation:
-- [ ] All images load correctly
-- [ ] Code syntax highlighting works
-- [ ] Progressive reveals function properly
-- [ ] No JavaScript errors in console
-- [ ] Presentation advances with arrow keys
-- [ ] All links are clickable and valid
-
-## DO NOT:
-- Add custom JavaScript beyond basic Remark initialization
-- Use external CSS files
-- Create overly complex slide layouts
-- Include slides with too much content
-- Use absolute file paths
-- Forget to test demos before presenting
-
-## Quick Reference for Common Tasks
-
-### Add a Poll Question
-```markdown
----
-
-# Quick Poll
-
-```
-Which framework do you prefer?
-1. Framework A
-2. Framework B
-3. Framework C
-4. Other
-```
-
----
-```
-
-### Create a Comparison Table
-```html
-<div style="display: flex; justify-content: space-around;">
-  <div>
-    <h3>Option A</h3>
-    <ul>
-      <li>Feature 1</li>
-      <li>Feature 2</li>
-    </ul>
-  </div>
-  <div>
-    <h3>Option B</h3>
-    <ul>
-      <li>Feature 1</li>
-      <li>Feature 2</li>
-    </ul>
-  </div>
-</div>
-```
-
-### Add a Footnote Reference
-```html
-<p style="font-size: 14px; margin-top: 50px;">
-  <sup>1</sup> <a href='https://example.com'>Source Title</a>
-</p>
-```
-
-## Key Concepts and Topics
-
-### Vibe Coding Definition
-"Building software with an LLM without reviewing the code it writes" - Simon Willison (2025)
-- Fast development for throwaway projects and prototypes
-- NOT for production systems or security-critical applications
-- Distinct from AI-assisted programming (which includes code review)
-
-### Core Vibe Coding Skills (from presentation)
-1. **Prompting**: Clear, specific instructions with examples
-2. **Context Management**: Strategic information loading
-3. **Capability Assignment**: Knowing what to delegate to AI
-4. **Vibe Checking**: Lightweight verification
-5. **Strategic Cognitive Offloading**: 70/30 rule
-6. **Personal Benchmarking**: Custom evaluation frameworks
-7. **Agentic Task Orchestration**: Coordinating AI agents
-
-## Presentation-Specific Guidelines
-
-### Core Principles
-- Use the established HTML template structure (DO NOT modify)
-- Maintain consistent font styling across all presentations
-- Follow the progressive reveal pattern using `--` separators
-- Keep slides concise and focused on single concepts
-- Always highlight demos with lightgreen background
-
-### Important Content Notes
-- The presentation covers AI tools and their appropriate use cases
-- Focus on the distinction between vibe coding and AI-assisted programming
-- Include practical patterns and real-world case studies
-- Emphasize responsible AI development practices
-
-Remember: This is educational content about AI-augmented development. Always maintain professional standards and follow the established presentation patterns.
+## Core Training Content
+
+### 7 Skills Taught
+1. **Prompting** - Clear instructions with examples
+2. **Context Management** - Strategic information loading
+3. **Capability Assignment** - What to delegate to AI
+4. **Vibe Checking** - Lightweight verification
+5. **Strategic Cognitive Offloading** - 70/30 rule
+6. **Personal Benchmarking** - Custom evaluation
+7. **Agentic Task Orchestration** - Multi-agent coordination
+
+### 5 Demo Modules
+| Module | Focus | Key Files |
+|--------|-------|-----------|
+| 01-prompting | 6 sub-skills | `buggy_calculator.py`, `data_processor.py` |
+| 02-context-management | 4 strategies | Tools reference (gitingest, repomix, r.jina.ai) |
+| 03-vibe-checking | Green/red flags | `employees.csv`, checklist |
+| 04-case-study-app | Full app build | `quote-collector.html`, building log |
+| 05-patterns | 5 patterns | UV scripts, sample data |
+
+### Tool Categories Covered
+- **Web Builders**: Claude Artifacts, ChatGPT Canvas, Vercel v0
+- **IDE Integration**: Cursor, GitHub Copilot, Windsurf
+- **Terminal Agents**: Claude Code, Aider
+- **Cloud Environments**: Replit, CodeSandbox
+
+## Key Files
+
+- `summary-vibes.md` - Best written overview of entire training
+- `demos/04-case-study-app/building-log.md` - Step-by-step app build chronicle
+- `assets/vibe-coding-techniques-guide.md` - Quick reference for techniques
+- `demos/05-patterns/scripts/*.py` - Ready-to-use UV automation scripts
+
+## Safety Guidelines (Training Content)
+
+**Safe for vibe coding**: Throwaway projects, experiments, personal scripts, learning
+**Avoid vibe coding**: Security-critical, production systems, code others maintain
+
+## Notes
+
+- All Python scripts use UV inline metadata (self-contained dependencies)
+- Presentation uses Remark.js - see the `remark-slides-skill` for formatting help
+- Sample data included in each demo module for hands-on practice

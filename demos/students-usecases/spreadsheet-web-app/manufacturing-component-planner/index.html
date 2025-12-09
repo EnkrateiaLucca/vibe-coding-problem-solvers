@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Component Planner</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Manufacturing Component Planner</h1>
+            <p class="subtitle">Calculate component requirements across your production forecast</p>
+        </header>
+
+        <!-- Upload Zone -->
+        <section class="upload-zone" id="uploadZone">
+            <div class="upload-content">
+                <div class="upload-icon">📁</div>
+                <h2>Upload BOM & Forecast Data</h2>
+                <p>Drag & drop your CSV file here, or click to browse</p>
+                <p class="format-hint">Expected format: machine_type, component, qty_per_machine, yr1_forecast...yr10_forecast</p>
+                <input type="file" id="fileInput" accept=".csv" hidden>
+                <button class="upload-btn" id="uploadBtn">Select CSV File</button>
+            </div>
+        </section>
+
+        <!-- Upload Success Message -->
+        <div class="upload-success" id="uploadSuccess" hidden>
+            <span class="success-icon">✓</span>
+            <span id="uploadMessage">Data loaded successfully</span>
+            <button class="reset-btn" id="resetBtn">Upload New File</button>
+        </div>
+
+        <!-- Controls Panel (hidden until data loaded) -->
+        <section class="controls-panel" id="controlsPanel" hidden>
+            <div class="control-group">
+                <label for="componentSelect">Component</label>
+                <select id="componentSelect">
+                    <option value="">Select a component...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="machineSelect">Machine</label>
+                <select id="machineSelect">
+                    <option value="all">All Machines</option>
+                </select>
+            </div>
+            <div class="control-group slider-group">
+                <label for="yearSlider">Time Horizon</label>
+                <div class="slider-container">
+                    <input type="range" id="yearSlider" min="1" max="10" value="5">
+                    <span class="slider-value" id="yearValue">5 years</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section (hidden until selections made) -->
+        <section class="results-section" id="resultsSection" hidden>
+            <!-- Primary Result Card -->
+            <div class="result-card" id="resultCard">
+                <p class="result-text" id="resultText">
+                    Select a component to see requirements
+                </p>
+            </div>
+
+            <!-- Chart and Stats Row -->
+            <div class="chart-stats-row">
+                <div class="chart-container">
+                    <canvas id="requirementsChart"></canvas>
+                </div>
+                <div class="stats-panel">
+                    <h3>Summary Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Components</span>
+                        <span class="stat-value" id="statTotal">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Average per Year</span>
+                        <span class="stat-value" id="statAverage">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Peak Year Requirement</span>
+                        <span class="stat-value" id="statPeak">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Machines</span>
+                        <span class="stat-value" id="statMachines">-</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Preview Table -->
+        <section class="data-preview" id="dataPreview" hidden>
+            <h3>BOM Data Preview</h3>
+            <div class="table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr id="tableHeader"></tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
