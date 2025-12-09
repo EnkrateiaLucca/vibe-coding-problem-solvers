@@ -21,6 +21,52 @@
 - `05-raw-to-structured.md` - Transform messy data
 - `uv-script-template.py` - Ready-to-use automation template
 
+## Working Scripts (scripts/)
+
+Complete, runnable UV scripts demonstrating each automation pattern:
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `resize-images.py` | Batch resize images | `uv run resize-images.py ./photos 800` |
+| `csv-processor.py` | Filter/select CSV data | `uv run csv-processor.py users.csv --status active` |
+| `headline-scraper.py` | Scrape web headlines | `uv run headline-scraper.py https://news.ycombinator.com` |
+| `meeting-parser.py` | Notes → action items | `uv run meeting-parser.py notes.txt` |
+
+## Sample Data (sample-data/)
+
+Ready-to-use data files for practicing the patterns:
+
+| File | For Pattern | Description |
+|------|-------------|-------------|
+| `users.csv` | Pattern 4 | 20-row sample for CSV filtering |
+| `meeting-notes.txt` | Pattern 5 | Team meeting for action extraction |
+| `app-logs.txt` | Pattern 5 | Server logs for parsing |
+| `reminders.txt` | Pattern 5 | Natural language for calendar events |
+| `contacts-raw.txt` | Pattern 5 | Messy contacts for structuring |
+| `requirements-raw.txt` | Pattern 5 | Feature requirements for user stories |
+| `sample-images/` | Pattern 4 | Folder with image generation script |
+
+### Quick Demo Commands
+
+```bash
+# Pattern 4: Automate Steps
+cd demos/05-patterns
+
+# Process CSV
+uv run scripts/csv-processor.py sample-data/users.csv --status active --columns name,email
+
+# Scrape headlines
+uv run scripts/headline-scraper.py https://news.ycombinator.com
+
+# Resize images (first generate test images)
+cd sample-data/sample-images
+uv run generate_test_images.py
+uv run ../../scripts/resize-images.py .
+
+# Pattern 5: Raw → Structured
+uv run scripts/meeting-parser.py sample-data/meeting-notes.txt
+```
+
 ## Quick Reference
 
 ```

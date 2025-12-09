@@ -1,0 +1,67 @@
+My Contact List Export
+======================
+
+alice smith
+email: alice.smith@gmail.com
+phone: 555-123-4567
+works at TechCorp as Senior Developer
+birthday is march 15
+
+---
+
+Bob Johnson - Marketing Manager at SalesCo
+bob.j@salescompany.com
+cell: (555) 987-6543
+LinkedIn: linkedin.com/in/bobjohnson
+
+---
+
+Carol Williams
+Senior Product Designer
+Email: carol@designstudio.io
+Work: 555.222.3333
+Personal: 555.222.4444
+Notes: Met at React conference 2024, interested in collaboration
+
+---
+
+David Lee
+david.lee@startup.tech
+CTO
+Phone: 555-444-5555
+Twitter: @davidlee_tech
+office: 123 Main St, San Francisco CA 94102
+
+---
+
+Emily Chen - Freelance Writer
+hello@emilychen.com
+Based in New York
+Available for content projects
+
+---
+
+Frank Miller
+frank.m@enterprise.com
+555-666-7777
+VP of Engineering at Enterprise Solutions Inc.
+Reports to: CEO
+Team size: 50+
+
+---
+
+Grace Park
+grace@nonprofit.org
+Community Outreach Director
+Office: 555-888-9999
+Address: 456 Oak Avenue, Portland OR 97201
+Note: Key contact for charity partnership
+
+---
+
+Henry Adams
+h.adams@consulting.biz
+Management Consultant
+Mobile: 555-111-2222
+Specializes in digital transformation
+Available Tue/Thu for calls

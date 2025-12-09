@@ -373,6 +373,79 @@ class: center, middle
 
 ---
 
+# The Prompting Skills Cycle
+
+<div style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+  <svg width="650" height="420" viewBox="0 0 650 420">
+    <!-- Central hub -->
+    <circle cx="325" cy="210" r="55" fill="#f5f5f5" stroke="#333" stroke-width="2"/>
+    <text x="325" y="200" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">Effective</text>
+    <text x="325" y="218" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">Prompting</text>
+
+    <!-- Node 1: Clear & Direct (top) -->
+    <rect x="260" y="15" width="130" height="50" rx="8" fill="#e8f4fd" stroke="#3498db" stroke-width="2"/>
+    <text x="325" y="38" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">1. Clear & Direct</text>
+    <text x="325" y="54" text-anchor="middle" font-size="10" fill="#555">Specific, unambiguous</text>
+
+    <!-- Node 2: Decomposition (top-right) -->
+    <rect x="480" y="85" width="130" height="50" rx="8" fill="#fff3cd" stroke="#f39c12" stroke-width="2"/>
+    <text x="545" y="108" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">2. Decomposition</text>
+    <text x="545" y="124" text-anchor="middle" font-size="10" fill="#555">Break into steps</text>
+
+    <!-- Node 3: Examples (bottom-right) -->
+    <rect x="480" y="280" width="130" height="50" rx="8" fill="#d4edda" stroke="#27ae60" stroke-width="2"/>
+    <text x="545" y="303" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">3. Examples</text>
+    <text x="545" y="319" text-anchor="middle" font-size="10" fill="#555">Show desired output</text>
+
+    <!-- Node 4: Role Assignment (bottom) -->
+    <rect x="260" y="355" width="130" height="50" rx="8" fill="#f8d7da" stroke="#e74c3c" stroke-width="2"/>
+    <text x="325" y="378" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">4. Role Assignment</text>
+    <text x="325" y="394" text-anchor="middle" font-size="10" fill="#555">Define expertise</text>
+
+    <!-- Node 5: Time to Think (bottom-left) -->
+    <rect x="40" y="280" width="130" height="50" rx="8" fill="#e7e7ff" stroke="#9b59b6" stroke-width="2"/>
+    <text x="105" y="303" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">5. Time to Think</text>
+    <text x="105" y="319" text-anchor="middle" font-size="10" fill="#555">Request reasoning</text>
+
+    <!-- Node 6: Constraints (top-left) -->
+    <rect x="40" y="85" width="130" height="50" rx="8" fill="#f0fff4" stroke="#1e8449" stroke-width="2"/>
+    <text x="105" y="108" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">6. Constraints</text>
+    <text x="105" y="124" text-anchor="middle" font-size="10" fill="#555">Specify format/limits</text>
+
+    <!-- Curved arrows connecting nodes clockwise -->
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#666"/>
+      </marker>
+    </defs>
+
+    <!-- Arrow 1→2 -->
+    <path d="M 390 40 Q 450 40 475 85" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <!-- Arrow 2→3 -->
+    <path d="M 545 135 Q 570 200 545 275" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <!-- Arrow 3→4 -->
+    <path d="M 475 330 Q 420 360 390 365" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <!-- Arrow 4→5 -->
+    <path d="M 260 380 Q 200 380 175 330" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <!-- Arrow 5→6 -->
+    <path d="M 105 280 Q 80 200 105 140" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <!-- Arrow 6→1 -->
+    <path d="M 175 90 Q 220 50 255 40" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Lines to center -->
+    <line x1="325" y1="65" x2="325" y2="155" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="480" y1="110" x2="375" y2="180" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="480" y1="305" x2="375" y2="240" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="325" y1="355" x2="325" y2="265" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="170" y1="305" x2="275" y2="240" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="170" y1="110" x2="275" y2="180" stroke="#ddd" stroke-width="1" stroke-dasharray="4"/>
+  </svg>
+</div>
+
+<p style="text-align: center; font-size: 14px; color: #666; margin-top: 5px;">Each skill reinforces the others in an iterative prompting workflow</p>
+
+---
+
 # Bad vs Good Prompts
 
 <div style="display: flex; justify-content: space-around; margin: 30px 0; gap: 20px;">

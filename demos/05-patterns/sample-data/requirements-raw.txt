@@ -1,0 +1,35 @@
+Password Reset Feature Requirements
+====================================
+
+From: Product Team
+Date: January 2025
+
+We need a way for users to reset their passwords when they forget them.
+
+Here's what we're thinking:
+
+- User clicks "Forgot Password" on the login page
+- They enter their email address
+- System sends them an email with a special link
+- The link should expire after 24 hours for security
+- Link can only be used once (single use)
+- When they click the link, they go to a page to enter a new password
+- New password must be at least 8 characters
+- Should have at least one number and one special character
+- Can't reuse any of their last 5 passwords
+- After successful reset, redirect to login with a success message
+- If the link is invalid or expired, show a clear error message
+- Log all password reset attempts for security audit
+- Send confirmation email after password is changed
+- Rate limit: max 3 reset requests per hour per email
+
+Edge cases to handle:
+- Email not found in system (don't reveal this to user for security)
+- User already has a pending reset link
+- User's account is locked or suspended
+- Email service is down (queue for retry)
+
+Nice to have (if time):
+- "Remember this device" option after reset
+- SMS as alternative to email
+- Security questions as additional verification

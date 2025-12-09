@@ -1,0 +1,20 @@
+2025-01-15 14:32:01 ERROR [auth] Login failed for user john@example.com - invalid credentials
+2025-01-15 14:32:05 INFO [auth] Retry successful for john@example.com
+2025-01-15 14:32:10 WARN [db] Connection pool at 80% capacity (16/20 connections)
+2025-01-15 14:32:15 ERROR [api] Timeout calling payment service after 30000ms
+2025-01-15 14:32:18 INFO [api] Payment service retry successful
+2025-01-15 14:32:22 DEBUG [cache] Cache miss for user_profile:12345
+2025-01-15 14:32:25 INFO [auth] New session created for admin@company.com
+2025-01-15 14:32:30 WARN [api] Rate limit approaching for IP 192.168.1.100 (95/100 requests)
+2025-01-15 14:32:35 ERROR [db] Query timeout: SELECT * FROM orders WHERE user_id = 789
+2025-01-15 14:32:38 INFO [scheduler] Background job 'daily_report' started
+2025-01-15 14:32:42 WARN [storage] Disk usage at 75% on /data partition
+2025-01-15 14:32:45 ERROR [email] Failed to send notification to jane@example.com - SMTP connection refused
+2025-01-15 14:32:50 INFO [auth] Password reset requested for user support@test.org
+2025-01-15 14:32:55 DEBUG [api] Incoming request: GET /api/v2/products?category=electronics
+2025-01-15 14:33:00 ERROR [payment] Transaction declined for order #ORD-2025-4521 - insufficient funds
+2025-01-15 14:33:05 INFO [scheduler] Background job 'daily_report' completed in 25.3s
+2025-01-15 14:33:10 WARN [security] Suspicious login attempt from IP 10.0.0.55 for user test@hacker.com
+2025-01-15 14:33:15 ERROR [api] 500 Internal Server Error on /api/v2/checkout - NullPointerException
+2025-01-15 14:33:18 INFO [cache] Cache invalidated for product catalog
+2025-01-15 14:33:22 WARN [db] Slow query detected (2.5s): JOIN on users and orders tables

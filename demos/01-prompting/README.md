@@ -22,6 +22,24 @@ The foundation of effective vibe coding. This demo covers the 6 prompting sub-sk
 - `05-time-to-think.md` - Chain of thought prompts
 - `06-constraints.md` - Boundaries and limitations
 
+## Sample Code (samples/)
+
+Runnable examples for hands-on practice:
+
+- `buggy_calculator.py` - A script with the exact TypeError from the debugging example
+- `data_processor.py` - The complete solution for the "Live Demo" exercise
+
+### Try It
+
+```bash
+# See the bug in action
+python demos/01-prompting/samples/buggy_calculator.py
+# Enter a number when prompted - observe the TypeError
+
+# Run the correct data processor
+python demos/01-prompting/samples/data_processor.py
+```
+
 ## Live Demo Flow
 
 1. **Start with a bad prompt** - Show what happens with vague instructions

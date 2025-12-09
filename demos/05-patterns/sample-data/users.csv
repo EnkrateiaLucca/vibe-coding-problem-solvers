@@ -1,0 +1,21 @@
+id,name,email,status,department,joined_date
+1,Alice Johnson,alice.johnson@company.com,active,Engineering,2023-03-15
+2,Bob Smith,bob.smith@company.com,inactive,Marketing,2022-08-01
+3,Carol Williams,carol.w@company.com,active,Engineering,2024-01-10
+4,David Brown,david.brown@company.com,active,Sales,2021-06-20
+5,Eve Davis,eve.davis@company.com,suspended,HR,2020-11-05
+6,Frank Miller,frank.m@company.com,active,Engineering,2023-09-01
+7,Grace Lee,grace.lee@company.com,inactive,Marketing,2022-02-14
+8,Henry Wilson,henry.w@company.com,active,Finance,2021-12-01
+9,Ivy Chen,ivy.chen@company.com,active,Engineering,2024-02-28
+10,Jack Taylor,jack.t@company.com,active,Sales,2023-05-15
+11,Kate Anderson,kate.a@company.com,suspended,Support,2020-07-22
+12,Leo Martinez,leo.m@company.com,active,Engineering,2022-10-10
+13,Mia Thomas,mia.thomas@company.com,active,HR,2023-11-01
+14,Noah Jackson,noah.j@company.com,inactive,Finance,2021-04-05
+15,Olivia White,olivia.w@company.com,active,Marketing,2024-03-01
+16,Paul Harris,paul.h@company.com,active,Engineering,2022-06-15
+17,Quinn Clark,quinn.c@company.com,active,Sales,2023-08-20
+18,Ruby Lewis,ruby.l@company.com,suspended,Support,2021-01-10
+19,Sam Walker,sam.walker@company.com,active,Engineering,2024-01-15
+20,Tina Hall,tina.h@company.com,active,Finance,2022-09-01

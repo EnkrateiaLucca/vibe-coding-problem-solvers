@@ -1,0 +1,50 @@
+Team Sync - Q1 Planning Meeting
+Date: January 15, 2025
+Attendees: Sarah, Bob, Maria, John, Lisa
+
+------------------------------------------------------------
+
+Project Updates:
+- Bob will finish the API endpoints by Friday
+- Need to review Sarah's authentication PR before end of day
+- Marketing wants the landing page copy updated by next week
+- Database migration can wait until after the v2 launch
+- Quick fix needed for the login timeout bug - John is looking at it now
+
+New Features Discussion:
+- Maria proposed adding dark mode to the dashboard (low priority for now)
+- Consider adding export to PDF functionality Q2
+- Mobile app push notifications need backend support
+
+Action Items from Last Week:
+- Lisa completed the security audit (done!)
+- Performance testing still pending - needs more test data
+- Documentation update blocked on API finalization
+
+Budget Items:
+- Need to hire 2 more frontend engineers by Q1
+- Cloud costs running 15% over budget - investigate
+- Conference attendance approved for React Summit (March)
+
+Upcoming Events:
+- Budget review meeting next Thursday at 3pm
+- Sprint planning Monday 10am
+- All-hands company meeting Friday 2pm
+- Maria's birthday celebration next Tuesday
+
+Technical Debt:
+- Refactor the user service module (estimated 2 sprints)
+- Update deprecated dependencies before April
+- Fix flaky integration tests - currently at 85% reliability
+
+Risks Identified:
+- Third-party payment API has been unstable
+- Key developer (Bob) taking vacation in February
+- Unclear requirements for compliance feature
+
+Next Steps:
+- Schedule 1:1 with each team lead
+- Create tickets for all action items by EOD
+- Share meeting notes with wider team
+
+Meeting ended at 11:45am

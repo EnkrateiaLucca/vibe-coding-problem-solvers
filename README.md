@@ -24,13 +24,11 @@ vibe-coding-problem-solvers/
 │   └── *.pdf                  # Exported presentation
 ├── assets/                    # Images and visual resources
 ├── demos/                     # Interactive demos and exercises
-│   ├── 01-spectrum-whiteboard/     # Development spectrum visualization
-│   ├── 02-seven-skills/            # Core skills practice
-│   ├── 03-prompting-context-capability/  # Foundational techniques
-│   ├── 04-basic-vibe-coding/       # Basic vibe coding practice
-│   ├── 05-vibe-code-html-app/      # HTML application demos
-│   ├── 06-patterns-examples/       # 12 practical patterns
-│   └── 07-personal-workflows/      # Workflow templates
+│   ├── 01-prompting/              # 6 prompting sub-skills + sample code
+│   ├── 02-context-management/     # Context strategies and tools
+│   ├── 03-vibe-checking/          # Verification techniques + practice data
+│   ├── 04-case-study-app/         # Complete Quote Collector app
+│   └── 05-patterns/               # 5 practical patterns + working scripts
 ├── summary-vibes.md          # Comprehensive training summary
 └── CLAUDE.md                 # Development guidelines
 ```
@@ -55,6 +53,26 @@ Each demo directory contains:
 - `README.md` - Demo overview and instructions
 - Practice exercises and examples
 - Reference materials
+
+### Try the Working Examples
+
+All demos include **runnable sample code and data**. After installing uv:
+
+```bash
+# Test a prompting demo - see the bug from the debugging example
+python demos/01-prompting/samples/buggy_calculator.py
+
+# Run a UV automation script
+uv run demos/05-patterns/scripts/csv-processor.py demos/05-patterns/sample-data/users.csv
+
+# Generate test images and resize them
+cd demos/05-patterns/sample-data/sample-images
+uv run generate_test_images.py
+uv run ../../scripts/resize-images.py .
+
+# Parse meeting notes into action items
+uv run demos/05-patterns/scripts/meeting-parser.py demos/05-patterns/sample-data/meeting-notes.txt
+```
 
 ## 💡 Key Concepts
 

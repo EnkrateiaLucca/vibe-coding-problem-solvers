@@ -24,6 +24,32 @@ OUTPUT → Quick Checks → Green Flags? → Trust It
 - `04-practice-scenarios.md` - Interactive exercises
 - `vibe-check-checklist.md` - Printable quick reference
 
+## Sample Data (sample-data/)
+
+Real data files for hands-on practice scenarios:
+
+| File | For Scenario | Description |
+|------|--------------|-------------|
+| `employees.csv` | Scenario 1 | 500 employee records for CSV parsing test |
+| `generate_employees.py` | Setup | UV script that generates the CSV |
+
+### Try Scenario 1
+
+The practice scenario asks: "Parse 500 employees into JSON - AI returned 312. What's wrong?"
+
+Test it yourself:
+
+```bash
+cd demos/03-vibe-checking/sample-data
+
+# View the CSV
+head -5 employees.csv
+wc -l employees.csv  # Should show 501 (header + 500 rows)
+
+# The scenario: AI might truncate due to context limits
+# Quick check: count the output records
+```
+
 ## When Vibe Checking Is Enough
 
 | Scenario | Vibe Check | Full Review |
