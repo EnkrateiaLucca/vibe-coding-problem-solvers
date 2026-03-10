@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Note Taker</title>
+    <style>
+        /* ========== CSS Variables ========== */
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --accent: #e94560;
+            --accent-hover: #ff6b6b;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6c6c6c;
+            --border-color: #2d3a4f;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.5);
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        /* ========== Reset & Base ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ========== Utilities ========== */
+        .hidden { display: none !important; }
+        .active { background: var(--bg-tertiary) !important; border-left: 3px solid var(--accent) !important; }
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: var(--border-color); }
+        .btn-icon {
+            padding: var(--spacing-xs);
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+        }
+        .btn-icon:hover { background: var(--bg-tertiary); color: var(--accent); }
+
+        /* ========== Landing Page ========== */
+        #landing-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: var(--spacing-xl);
+        }
+
+        .landing-title {
+            font-size: 2.5rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .landing-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .drop-zone {
+            width: 100%;
+            max-width: 500px;
+            padding: var(--spacing-xl) var(--spacing-lg);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(233, 69, 96, 0.1);
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .recent-sessions {
+            margin-top: var(--spacing-xl);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .recent-sessions h3 {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .session-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .session-item:hover { background: var(--bg-tertiary); }
+
+        .session-info {
+            flex: 1;
+        }
+
+        .session-name {
+            font-weight: 500;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .session-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* ========== App Container ========== */
+        #app-container {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+        }
+
+        /* ========== App Header ========== */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .video-filename {
+            font-weight: 500;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        /* ========== Main Content Grid ========== */
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            overflow: hidden;
+        }
+
+        /* ========== Notes Panel (Left) ========== */
+        .notes-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .note-input-area {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .note-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: var(--spacing-sm);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            resize: vertical;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .note-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filter-btn {
+            font-size: 12px;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .notes-list {
+            flex: 1;
+            overflow-y: auto;
+            list-style: none;
+        }
+
+        .note-item {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .note-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .note-timestamp {
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .note-timestamp:hover { text-decoration: underline; }
+
+        .note-type-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+        }
+
+        .note-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .note-screenshot {
+            width: 100%;
+            max-height: 120px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .note-item-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .note-item:hover .note-item-actions { opacity: 1; }
+
+        /* ========== Video Panel (Right) ========== */
+        .video-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+
+        .video-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            min-height: 0;
+        }
+
+        .video-container video {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100%;
+        }
+
+        #drawing-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+        }
+
+        .timeline-container {
+            position: relative;
+            height: 30px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .timeline-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .timeline-marker:hover {
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .transcript-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .transcript-segment {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .transcript-segment:hover { background: var(--bg-tertiary); }
+        .transcript-segment.active {
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent);
+        }
+
+        .transcript-time {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--accent);
+            margin-right: var(--spacing-sm);
+        }
+
+        .transcript-text {
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        /* ========== Drawing Toolbar ========== */
+        #drawing-toolbar {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+        }
+
+        .color-picker {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .stroke-width {
+            width: 60px;
+            padding: var(--spacing-xs);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+        }
+
+        /* ========== Modal ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .shortcuts-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .shortcuts-table td {
+            padding: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .shortcuts-table kbd {
+            display: inline-block;
+            padding: 2px 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        /* ========== Toast Notifications ========== */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+        }
+
+        .toast {
+            padding: var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            margin-top: var(--spacing-sm);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .toast.success { border-left: 3px solid var(--success); }
+        .toast.error { border-left: 3px solid var(--accent); }
+        .toast.info { border-left: 3px solid var(--warning); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ========== Scrollbar ========== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* ========== Edit Mode ========== */
+        .note-edit-textarea {
+            width: 100%;
+            min-height: 60px;
+            padding: var(--spacing-sm);
+            background: var(--bg-primary);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-top: var(--spacing-sm);
+        }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landing-page">
+        <h1 class="landing-title">Video Note Taker</h1>
+        <p class="landing-subtitle">Take timestamped notes while watching videos</p>
+
+        <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-icon">&#128249;</div>
+            <p>Drop a video file here or click to browse</p>
+            <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">
+                Supports MP4, WebM, MOV, and other video formats
+            </p>
+            <input type="file" id="video-input" accept="video/*">
+        </div>
+
+        <div class="recent-sessions" id="recent-sessions">
+            <h3>Recent Sessions</h3>
+            <div id="sessions-list"></div>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app-container" class="hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="btn btn-secondary" id="new-session-btn" title="New Session">&#8592; New</button>
+                <span class="video-filename" id="video-filename"></span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="import-transcript-btn" title="Import Transcript">&#128196; Transcript</button>
+                <input type="file" id="transcript-input" accept=".json" class="hidden">
+                <button class="btn btn-secondary" id="export-json-btn" title="Export JSON">&#128190; Save</button>
+                <button class="btn btn-secondary" id="export-pdf-btn" title="Export PDF">&#128196; PDF</button>
+                <button class="btn btn-secondary" id="import-session-btn" title="Import Session">&#128194; Load</button>
+                <input type="file" id="session-input" accept=".json" class="hidden">
+                <button class="btn btn-secondary" id="shortcuts-btn" title="Keyboard Shortcuts">&#9000;</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Notes Panel -->
+            <aside class="notes-panel">
+                <div class="note-input-area">
+                    <textarea
+                        class="note-textarea"
+                        id="note-input"
+                        placeholder="Type your note here... (Ctrl/Cmd + Enter to save)"
+                    ></textarea>
+                    <div class="note-actions">
+                        <button class="btn btn-primary" id="add-note-btn">&#128203; Add Note</button>
+                        <button class="btn btn-secondary" id="add-free-note-btn" title="Add note without timestamp">&#128221; Free Note</button>
+                        <button class="btn btn-secondary" id="annotate-btn" title="Draw on video frame">&#9998; Annotate</button>
+                    </div>
+                </div>
+                <div class="filter-controls">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="timestamped">Timestamped</button>
+                    <button class="filter-btn" data-filter="free">Free</button>
+                </div>
+                <ul class="notes-list" id="notes-list"></ul>
+            </aside>
+
+            <!-- Video Panel -->
+            <main class="video-panel">
+                <div class="video-container" id="video-container">
+                    <video id="video-player" controls></video>
+                    <canvas id="drawing-layer" class="hidden"></canvas>
+                    <div id="drawing-toolbar" class="hidden">
+                        <input type="color" class="color-picker" id="draw-color" value="#e94560" title="Pen Color">
+                        <select class="stroke-width" id="stroke-width" title="Stroke Width">
+                            <option value="2">Thin</option>
+                            <option value="4" selected>Medium</option>
+                            <option value="8">Thick</option>
+                        </select>
+                        <button class="btn btn-secondary" id="eraser-btn">&#9986; Eraser</button>
+                        <button class="btn btn-secondary" id="undo-btn">&#8630; Undo</button>
+                        <button class="btn btn-primary" id="save-drawing-btn">&#10003; Save</button>
+                        <button class="btn btn-secondary" id="cancel-drawing-btn">&#10005; Cancel</button>
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-markers" id="timeline-markers"></div>
+                </div>
+                <div class="transcript-container hidden" id="transcript-container"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div class="modal-overlay hidden" id="shortcuts-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Keyboard Shortcuts</h2>
+                <button class="btn-icon" id="close-shortcuts">&times;</button>
+            </div>
+            <table class="shortcuts-table">
+                <tr><td><kbd>Space</kbd></td><td>Play / Pause video</td></tr>
+                <tr><td><kbd>Ctrl/Cmd</kbd> + <kbd>Enter</kbd></td><td>Save note at current timestamp</td></tr>
+                <tr><td><kbd>&#8592;</kbd> / <kbd>&#8594;</kbd></td><td>Seek backward/forward 5 seconds</td></tr>
+                <tr><td><kbd>Shift</kbd> + <kbd>&#8592;</kbd> / <kbd>&#8594;</kbd></td><td>Seek backward/forward 10 seconds</td></tr>
+                <tr><td><kbd>N</kbd></td><td>Focus note input</td></tr>
+                <tr><td><kbd>A</kbd></td><td>Open annotation canvas</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Close modal / Cancel drawing</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // ========== Global State ==========
+        let notes = [];
+        let videoFile = null;
+        let noteScreenshots = {};
+        let currentActiveNoteId = null;
+        let transcript = [];
+        let undoStack = [];
+        let isDrawing = false;
+        let currentFilter = 'all';
+        let autoSaveInterval = null;
+        let drawingMode = 'pen'; // 'pen' or 'eraser'
+        let lastPoint = null;
+
+        // ========== DOM References ==========
+        const landingPage = document.getElementById('landing-page');
+        const appContainer = document.getElementById('app-container');
+        const dropZone = document.getElementById('drop-zone');
+        const videoInput = document.getElementById('video-input');
+        const videoPlayer = document.getElementById('video-player');
+        const videoFilename = document.getElementById('video-filename');
+        const noteInput = document.getElementById('note-input');
+        const notesList = document.getElementById('notes-list');
+        const timelineMarkers = document.getElementById('timeline-markers');
+        const drawingLayer = document.getElementById('drawing-layer');
+        const drawingToolbar = document.getElementById('drawing-toolbar');
+        const transcriptContainer = document.getElementById('transcript-container');
+        const sessionsList = document.getElementById('sessions-list');
+        const toastContainer = document.getElementById('toast-container');
+        const shortcutsModal = document.getElementById('shortcuts-modal');
+
+        // ========== Utility Functions ==========
+        const formatTime = (ms) => {
+            if (!ms && ms !== 0) return "--:--";
+            const seconds = Math.floor(ms / 1000);
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            const parts = [h, m, s].map(v => v < 10 ? '0' + v : v);
+            return h > 0 ? parts.join(':') : parts.slice(1).join(':');
+        };
+
+        const parseTime = (timeStr) => {
+            const parts = timeStr.split(':').map(Number);
+            if (parts.length === 3) {
+                return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+            }
+            return (parts[0] * 60 + parts[1]) * 1000;
+        };
+
+        const generateId = () => Date.now() + Math.random().toString(36).substr(2, 9);
+
+        const showToast = (message, type = 'info') => {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+
+        // ========== Screenshot Capture ==========
+        const captureScreenshot = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoPlayer.videoWidth;
+            canvas.height = videoPlayer.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoPlayer, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.8);
+        };
+
+        // ========== Note Management ==========
+        const createNote = (text, type = 'timestamped', screenshot = null) => {
+            const currentTime = videoPlayer.currentTime * 1000;
+            const note = {
+                id: generateId(),
+                timestamp: type === 'timestamped' ? formatTime(currentTime) : null,
+                timestampMs: type === 'timestamped' ? currentTime : null,
+                text: text.trim(),
+                type: type,
+                createdAt: Date.now()
+            };
+
+            if (screenshot) {
+                noteScreenshots[note.id] = screenshot;
+            } else if (type === 'timestamped') {
+                noteScreenshots[note.id] = captureScreenshot();
+            }
+
+            notes.push(note);
+            sortNotes();
+            renderNotes();
+            renderTimelineMarkers();
+            saveToLocalStorage();
+            return note;
+        };
+
+        const sortNotes = () => {
+            notes.sort((a, b) => {
+                // Free notes go to the bottom
+                if (a.type === 'free' && b.type !== 'free') return 1;
+                if (b.type === 'free' && a.type !== 'free') return -1;
+                // Both free notes - sort by creation time
+                if (a.type === 'free' && b.type === 'free') return a.createdAt - b.createdAt;
+                // Both timestamped - sort by timestamp, then creation time
+                if (a.timestampMs !== b.timestampMs) return a.timestampMs - b.timestampMs;
+                return a.createdAt - b.createdAt;
+            });
+        };
+
+        const deleteNote = (noteId) => {
+            notes = notes.filter(n => n.id !== noteId);
+            delete noteScreenshots[noteId];
+            renderNotes();
+            renderTimelineMarkers();
+            saveToLocalStorage();
+            showToast('Note deleted', 'success');
+        };
+
+        const updateNote = (noteId, newText) => {
+            const note = notes.find(n => n.id === noteId);
+            if (note) {
+                note.text = newText.trim();
+                renderNotes();
+                saveToLocalStorage();
+                showToast('Note updated', 'success');
+            }
+        };
+
+        // ========== Rendering ==========
+        const renderNotes = () => {
+            const filteredNotes = notes.filter(note => {
+                if (currentFilter === 'all') return true;
+                return note.type === currentFilter;
+            });
+
+            notesList.innerHTML = filteredNotes.map(note => `
+                <li class="note-item ${note.id === currentActiveNoteId ? 'active' : ''}" data-id="${note.id}">
+                    <div class="note-header">
+                        ${note.timestamp
+                            ? `<span class="note-timestamp" onclick="seekToTime(${note.timestampMs})">${note.timestamp}</span>`
+                            : '<span class="note-type-badge">Free Note</span>'
+                        }
+                        <span class="note-type-badge">${note.type}</span>
+                    </div>
+                    ${noteScreenshots[note.id]
+                        ? `<img class="note-screenshot" src="${noteScreenshots[note.id]}" alt="Screenshot" onclick="viewScreenshot('${note.id}')">`
+                        : ''
+                    }
+                    <div class="note-text">${escapeHtml(note.text)}</div>
+                    <div class="note-item-actions">
+                        <button class="btn-icon" onclick="editNote('${note.id}')" title="Edit">&#9998;</button>
+                        <button class="btn-icon" onclick="deleteNote('${note.id}')" title="Delete">&#128465;</button>
+                    </div>
+                </li>
+            `).join('');
+        };
+
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        const renderTimelineMarkers = () => {
+            if (!videoPlayer.duration) return;
+
+            const timestampedNotes = notes.filter(n => n.type === 'timestamped');
+            timelineMarkers.innerHTML = timestampedNotes.map(note => {
+                const position = (note.timestampMs / 1000 / videoPlayer.duration) * 100;
+                return `<div class="timeline-marker" style="left: ${position}%" title="${note.timestamp}" onclick="seekToTime(${note.timestampMs})"></div>`;
+            }).join('');
+        };
+
+        const renderTranscript = () => {
+            if (transcript.length === 0) {
+                transcriptContainer.classList.add('hidden');
+                return;
+            }
+
+            transcriptContainer.classList.remove('hidden');
+            transcriptContainer.innerHTML = transcript.map((seg, idx) => `
+                <div class="transcript-segment" data-idx="${idx}" onclick="seekToTime(${seg.offsets.from})">
+                    <span class="transcript-time">${seg.timestamps.from}</span>
+                    <span class="transcript-text">${escapeHtml(seg.text)}</span>
+                </div>
+            `).join('');
+        };
+
+        const renderRecentSessions = () => {
+            const sessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<p style="color: var(--text-muted);">No recent sessions</p>';
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.slice(0, 5).map(session => `
+                <div class="session-item" onclick="loadSession('${session.id}')">
+                    <div class="session-info">
+                        <div class="session-name">${escapeHtml(session.videoFileName)}</div>
+                        <div class="session-meta">${session.noteCount} notes - ${new Date(session.lastModified).toLocaleDateString()}</div>
+                    </div>
+                    <button class="btn-icon" onclick="event.stopPropagation(); deleteSession('${session.id}')" title="Delete">&#128465;</button>
+                </div>
+            `).join('');
+        };
+
+        // ========== Playback Synchronization ==========
+        const highlightActiveNote = () => {
+            const currentMs = videoPlayer.currentTime * 1000;
+            const timestampedNotes = notes.filter(n => n.type === 'timestamped');
+
+            // Find the last note that occurred before current time
+            let activeNote = null;
+            for (let i = timestampedNotes.length - 1; i >= 0; i--) {
+                if (timestampedNotes[i].timestampMs <= currentMs) {
+                    activeNote = timestampedNotes[i];
+                    break;
+                }
+            }
+
+            if (activeNote && activeNote.id !== currentActiveNoteId) {
+                currentActiveNoteId = activeNote.id;
+                renderNotes();
+
+                // Scroll to active note
+                const activeElement = document.querySelector(`.note-item[data-id="${activeNote.id}"]`);
+                if (activeElement) {
+                    activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        };
+
+        const highlightActiveTranscript = () => {
+            const currentMs = videoPlayer.currentTime * 1000;
+
+            document.querySelectorAll('.transcript-segment').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            for (let i = 0; i < transcript.length; i++) {
+                const seg = transcript[i];
+                if (currentMs >= seg.offsets.from && currentMs <= seg.offsets.to) {
+                    const el = document.querySelector(`.transcript-segment[data-idx="${i}"]`);
+                    if (el) {
+                        el.classList.add('active');
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    break;
+                }
+            }
+        };
+
+        const seekToTime = (ms) => {
+            videoPlayer.currentTime = ms / 1000;
+            videoPlayer.play();
+        };
+
+        // ========== Drawing System ==========
+        const initDrawingCanvas = () => {
+            const container = document.getElementById('video-container');
+            const rect = videoPlayer.getBoundingClientRect();
+
+            drawingLayer.width = videoPlayer.videoWidth || rect.width;
+            drawingLayer.height = videoPlayer.videoHeight || rect.height;
+            drawingLayer.style.width = rect.width + 'px';
+            drawingLayer.style.height = rect.height + 'px';
+
+            const ctx = drawingLayer.getContext('2d');
+            ctx.drawImage(videoPlayer, 0, 0, drawingLayer.width, drawingLayer.height);
+
+            undoStack = [];
+            saveDrawingState();
+        };
+
+        const startDrawing = () => {
+            videoPlayer.pause();
+            initDrawingCanvas();
+            drawingLayer.classList.remove('hidden');
+            drawingToolbar.classList.remove('hidden');
+            isDrawing = false;
+            drawingMode = 'pen';
+        };
+
+        const stopDrawing = (save = false) => {
+            if (save) {
+                const screenshot = drawingLayer.toDataURL('image/jpeg', 0.9);
+                const text = noteInput.value.trim() || 'Annotated frame';
+                createNote(text, 'timestamped', screenshot);
+                noteInput.value = '';
+                showToast('Annotation saved as note', 'success');
+            }
+
+            drawingLayer.classList.add('hidden');
+            drawingToolbar.classList.add('hidden');
+            undoStack = [];
+        };
+
+        const saveDrawingState = () => {
+            const ctx = drawingLayer.getContext('2d');
+            undoStack.push(ctx.getImageData(0, 0, drawingLayer.width, drawingLayer.height));
+            if (undoStack.length > 20) undoStack.shift(); // Limit undo stack
+        };
+
+        const undoDrawing = () => {
+            if (undoStack.length > 1) {
+                undoStack.pop();
+                const ctx = drawingLayer.getContext('2d');
+                ctx.putImageData(undoStack[undoStack.length - 1], 0, 0);
+            }
+        };
+
+        const getCanvasPoint = (e) => {
+            const rect = drawingLayer.getBoundingClientRect();
+            const scaleX = drawingLayer.width / rect.width;
+            const scaleY = drawingLayer.height / rect.height;
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        };
+
+        const draw = (e) => {
+            if (!isDrawing) return;
+
+            const ctx = drawingLayer.getContext('2d');
+            const point = getCanvasPoint(e);
+
+            ctx.lineWidth = document.getElementById('stroke-width').value;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (drawingMode === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = document.getElementById('draw-color').value;
+            }
+
+            if (lastPoint) {
+                ctx.beginPath();
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
+            }
+
+            lastPoint = point;
+        };
+
+        // Drawing event listeners
+        drawingLayer.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            lastPoint = getCanvasPoint(e);
+            saveDrawingState();
+        });
+
+        drawingLayer.addEventListener('mousemove', draw);
+        drawingLayer.addEventListener('mouseup', () => { isDrawing = false; lastPoint = null; });
+        drawingLayer.addEventListener('mouseleave', () => { isDrawing = false; lastPoint = null; });
+
+        // Touch support
+        drawingLayer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            lastPoint = getCanvasPoint(e);
+            saveDrawingState();
+        });
+        drawingLayer.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+        drawingLayer.addEventListener('touchend', () => { isDrawing = false; lastPoint = null; });
+
+        // ========== Session Management ==========
+        const saveToLocalStorage = () => {
+            if (!videoFile) return;
+
+            const sessionId = `session_${videoFile.name}`;
+            const session = {
+                id: sessionId,
+                videoFileName: videoFile.name,
+                notes: notes,
+                screenshots: noteScreenshots,
+                transcript: transcript,
+                lastModified: Date.now()
+            };
+
+            localStorage.setItem(sessionId, JSON.stringify(session));
+
+            // Update recent sessions list
+            let recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+            recentSessions = recentSessions.filter(s => s.id !== sessionId);
+            recentSessions.unshift({
+                id: sessionId,
+                videoFileName: videoFile.name,
+                noteCount: notes.length,
+                lastModified: Date.now()
+            });
+            localStorage.setItem('recentSessions', JSON.stringify(recentSessions.slice(0, 10)));
+        };
+
+        const loadFromLocalStorage = (videoFileName) => {
+            const sessionId = `session_${videoFileName}`;
+            const session = localStorage.getItem(sessionId);
+
+            if (session) {
+                const data = JSON.parse(session);
+                notes = data.notes || [];
+                noteScreenshots = data.screenshots || {};
+                transcript = data.transcript || [];
+                renderNotes();
+                renderTimelineMarkers();
+                renderTranscript();
+                showToast('Session restored', 'success');
+            }
+        };
+
+        const loadSession = (sessionId) => {
+            const session = localStorage.getItem(sessionId);
+            if (session) {
+                const data = JSON.parse(session);
+                notes = data.notes || [];
+                noteScreenshots = data.screenshots || {};
+                transcript = data.transcript || [];
+
+                // Show app and prompt for video
+                showToast('Please select the video file: ' + data.videoFileName, 'info');
+                videoInput.click();
+            }
+        };
+
+        const deleteSession = (sessionId) => {
+            if (confirm('Delete this session?')) {
+                localStorage.removeItem(sessionId);
+                let recentSessions = JSON.parse(localStorage.getItem('recentSessions') || '[]');
+                recentSessions = recentSessions.filter(s => s.id !== sessionId);
+                localStorage.setItem('recentSessions', JSON.stringify(recentSessions));
+                renderRecentSessions();
+                showToast('Session deleted', 'success');
+            }
+        };
+
+        const exportJSON = () => {
+            const exportData = {
+                videoFileName: videoFile?.name || 'unknown',
+                notes: notes,
+                screenshots: noteScreenshots,
+                transcript: transcript,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notes_${videoFile?.name || 'session'}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Session exported', 'success');
+        };
+
+        const importSession = (file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    notes = data.notes || [];
+                    noteScreenshots = data.screenshots || {};
+                    transcript = data.transcript || [];
+                    renderNotes();
+                    renderTimelineMarkers();
+                    renderTranscript();
+                    showToast('Session imported. Please load the video: ' + data.videoFileName, 'info');
+                } catch (err) {
+                    showToast('Invalid session file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        const exportPDF = () => {
+            const sortedNotes = [...notes].sort((a, b) => {
+                if (a.type === 'free' && b.type !== 'free') return 1;
+                if (b.type === 'free' && a.type !== 'free') return -1;
+                if (a.timestampMs !== b.timestampMs) return (a.timestampMs || 0) - (b.timestampMs || 0);
+                return a.createdAt - b.createdAt;
+            });
+
+            const html = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Notes - ${videoFile?.name || 'Video'}</title>
+                    <style>
+                        body { font-family: -apple-system, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+                        h1 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+                        .note { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid; }
+                        .note-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                        .timestamp { font-family: monospace; color: #e94560; font-weight: bold; }
+                        .note-type { font-size: 12px; color: #666; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; }
+                        .screenshot { max-width: 100%; max-height: 200px; border-radius: 4px; margin: 10px 0; }
+                        .note-text { white-space: pre-wrap; line-height: 1.6; }
+                        .meta { color: #666; font-size: 12px; margin-top: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Notes: ${escapeHtml(videoFile?.name || 'Video')}</h1>
+                    ${sortedNotes.map(note => `
+                        <div class="note">
+                            <div class="note-header">
+                                ${note.timestamp ? `<span class="timestamp">${note.timestamp}</span>` : '<span></span>'}
+                                <span class="note-type">${note.type}</span>
+                            </div>
+                            ${noteScreenshots[note.id] ? `<img class="screenshot" src="${noteScreenshots[note.id]}">` : ''}
+                            <div class="note-text">${escapeHtml(note.text)}</div>
+                        </div>
+                    `).join('')}
+                    <div class="meta">Exported on ${new Date().toLocaleString()}</div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.onload = () => printWindow.print();
+        };
+
+        // ========== Edit Note ==========
+        const editNote = (noteId) => {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+
+            const noteElement = document.querySelector(`.note-item[data-id="${noteId}"]`);
+            const textElement = noteElement.querySelector('.note-text');
+            const originalText = note.text;
+
+            textElement.innerHTML = `
+                <textarea class="note-edit-textarea">${escapeHtml(originalText)}</textarea>
+                <div class="edit-actions">
+                    <button class="btn btn-primary btn-sm" onclick="saveEdit('${noteId}')">Save</button>
+                    <button class="btn btn-secondary btn-sm" onclick="cancelEdit('${noteId}', '${encodeURIComponent(originalText)}')">Cancel</button>
+                </div>
+            `;
+            textElement.querySelector('textarea').focus();
+        };
+
+        const saveEdit = (noteId) => {
+            const textarea = document.querySelector(`.note-item[data-id="${noteId}"] .note-edit-textarea`);
+            if (textarea) {
+                updateNote(noteId, textarea.value);
+            }
+        };
+
+        const cancelEdit = (noteId, encodedOriginalText) => {
+            const originalText = decodeURIComponent(encodedOriginalText);
+            const note = notes.find(n => n.id === noteId);
+            if (note) {
+                renderNotes();
+            }
+        };
+
+        const viewScreenshot = (noteId) => {
+            const screenshot = noteScreenshots[noteId];
+            if (screenshot) {
+                const win = window.open('', '_blank');
+                win.document.write(`<img src="${screenshot}" style="max-width: 100%; height: auto;">`);
+            }
+        };
+
+        // ========== Video Loading ==========
+        const loadVideo = (file) => {
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoFilename.textContent = file.name;
+
+            landingPage.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+
+            // Check for existing session
+            loadFromLocalStorage(file.name);
+
+            // Start auto-save
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            autoSaveInterval = setInterval(saveToLocalStorage, 30000);
+        };
+
+        // ========== Transcript Import ==========
+        const importTranscript = (file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Support multiple transcript formats
+                    if (Array.isArray(data)) {
+                        transcript = data.map(seg => ({
+                            text: seg.text || seg.content || '',
+                            offsets: {
+                                from: seg.offsets?.from || seg.start * 1000 || 0,
+                                to: seg.offsets?.to || seg.end * 1000 || 0
+                            },
+                            timestamps: {
+                                from: seg.timestamps?.from || formatTime(seg.offsets?.from || seg.start * 1000 || 0),
+                                to: seg.timestamps?.to || formatTime(seg.offsets?.to || seg.end * 1000 || 0)
+                            }
+                        }));
+                    } else if (data.segments) {
+                        transcript = data.segments.map(seg => ({
+                            text: seg.text || '',
+                            offsets: { from: seg.start * 1000, to: seg.end * 1000 },
+                            timestamps: { from: formatTime(seg.start * 1000), to: formatTime(seg.end * 1000) }
+                        }));
+                    }
+
+                    renderTranscript();
+                    saveToLocalStorage();
+                    showToast('Transcript imported', 'success');
+                } catch (err) {
+                    showToast('Invalid transcript file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // ========== Event Listeners ==========
+
+        // Drop zone
+        dropZone.addEventListener('click', () => videoInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) {
+                loadVideo(file);
+            }
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) loadVideo(e.target.files[0]);
+        });
+
+        // Video events
+        videoPlayer.addEventListener('loadedmetadata', renderTimelineMarkers);
+        videoPlayer.addEventListener('timeupdate', () => {
+            highlightActiveNote();
+            highlightActiveTranscript();
+        });
+
+        // Note actions
+        document.getElementById('add-note-btn').addEventListener('click', () => {
+            const text = noteInput.value.trim();
+            if (text) {
+                createNote(text, 'timestamped');
+                noteInput.value = '';
+                showToast('Note added', 'success');
+            }
+        });
+
+        document.getElementById('add-free-note-btn').addEventListener('click', () => {
+            const text = noteInput.value.trim();
+            if (text) {
+                createNote(text, 'free');
+                noteInput.value = '';
+                showToast('Free note added', 'success');
+            }
+        });
+
+        document.getElementById('annotate-btn').addEventListener('click', startDrawing);
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderNotes();
+            });
+        });
+
+        // Drawing toolbar
+        document.getElementById('eraser-btn').addEventListener('click', () => {
+            drawingMode = drawingMode === 'eraser' ? 'pen' : 'eraser';
+            document.getElementById('eraser-btn').textContent = drawingMode === 'eraser' ? '&#9998; Pen' : '&#9986; Eraser';
+        });
+        document.getElementById('undo-btn').addEventListener('click', undoDrawing);
+        document.getElementById('save-drawing-btn').addEventListener('click', () => stopDrawing(true));
+        document.getElementById('cancel-drawing-btn').addEventListener('click', () => stopDrawing(false));
+
+        // Header actions
+        document.getElementById('new-session-btn').addEventListener('click', () => {
+            if (confirm('Start a new session? Make sure to save your current notes.')) {
+                notes = [];
+                noteScreenshots = {};
+                transcript = [];
+                currentActiveNoteId = null;
+                videoFile = null;
+                videoPlayer.src = '';
+                appContainer.classList.add('hidden');
+                landingPage.classList.remove('hidden');
+                renderRecentSessions();
+            }
+        });
+
+        document.getElementById('export-json-btn').addEventListener('click', exportJSON);
+        document.getElementById('export-pdf-btn').addEventListener('click', exportPDF);
+
+        document.getElementById('import-session-btn').addEventListener('click', () => {
+            document.getElementById('session-input').click();
+        });
+        document.getElementById('session-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) importSession(e.target.files[0]);
+        });
+
+        document.getElementById('import-transcript-btn').addEventListener('click', () => {
+            document.getElementById('transcript-input').click();
+        });
+        document.getElementById('transcript-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) importTranscript(e.target.files[0]);
+        });
+
+        // Shortcuts modal
+        document.getElementById('shortcuts-btn').addEventListener('click', () => {
+            shortcutsModal.classList.remove('hidden');
+        });
+        document.getElementById('close-shortcuts').addEventListener('click', () => {
+            shortcutsModal.classList.add('hidden');
+        });
+        shortcutsModal.addEventListener('click', (e) => {
+            if (e.target === shortcutsModal) shortcutsModal.classList.add('hidden');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in input fields
+            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') {
+                // Allow Ctrl/Cmd + Enter in textarea
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    const text = noteInput.value.trim();
+                    if (text) {
+                        createNote(text, 'timestamped');
+                        noteInput.value = '';
+                        showToast('Note added', 'success');
+                    }
+                }
+                return;
+            }
+
+            // Close modals on Escape
+            if (e.key === 'Escape') {
+                shortcutsModal.classList.add('hidden');
+                if (!drawingLayer.classList.contains('hidden')) {
+                    stopDrawing(false);
+                }
+                return;
+            }
+
+            // Only handle shortcuts when app is visible
+            if (appContainer.classList.contains('hidden')) return;
+
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    videoPlayer.paused ? videoPlayer.play() : videoPlayer.pause();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    videoPlayer.currentTime -= e.shiftKey ? 10 : 5;
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    videoPlayer.currentTime += e.shiftKey ? 10 : 5;
+                    break;
+                case 'n':
+                case 'N':
+                    e.preventDefault();
+                    noteInput.focus();
+                    break;
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    startDrawing();
+                    break;
+            }
+        });
+
+        // ========== Initialization ==========
+        renderRecentSessions();
+    </script>
+</body>
+</html>

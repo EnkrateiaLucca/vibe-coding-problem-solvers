@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instagram Video Downloader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Instagram Video Downloader</h1>
+    <div id="status" class="status">
+      Navigate to an Instagram post with a video
+    </div>
+    <button id="downloadBtn" class="download-btn" disabled>
+      Download Video
+    </button>
+    <div id="error" class="error hidden"></div>
+    <div class="instructions">
+      <h3>How to use:</h3>
+      <ol>
+        <li>Open an Instagram post with a video</li>
+        <li>Click the extension icon</li>
+        <li>Click "Download Video"</li>
+      </ol>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

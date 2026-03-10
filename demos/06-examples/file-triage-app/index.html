@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Triage</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+
+    .screen {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Setup Screen */
+    #setup-screen {
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+    }
+
+    #setup-screen h1 {
+      font-size: 32px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    #setup-screen p {
+      color: #888;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 12px;
+      width: 600px;
+    }
+
+    #setup-screen input {
+      flex: 1;
+      padding: 14px 18px;
+      font-size: 15px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #setup-screen input:focus {
+      border-color: #0066ff;
+    }
+
+    .btn-primary {
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      background: #0066ff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+      background: #0052cc;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      background: #1a1a1a;
+      color: #888;
+      border: 1px solid #333;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      border-color: #555;
+      color: #fff;
+    }
+
+    .filter-btn.active {
+      background: #0066ff;
+      border-color: #0066ff;
+      color: #fff;
+    }
+
+    .error {
+      color: #ff4444;
+      font-size: 14px;
+    }
+
+    /* Triage Screen */
+    #triage-screen {
+      flex-direction: column;
+      position: relative;
+    }
+
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: #0a0a0a;
+      border-bottom: 1px solid #222;
+      gap: 16px;
+    }
+
+    #progress {
+      font-size: 13px;
+      color: #666;
+      font-weight: 500;
+      min-width: 80px;
+    }
+
+    #file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #filename {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      max-width: 400px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-badge {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-image { background: #2d5a27; color: #7dff6a; }
+    .badge-document { background: #5a4427; color: #ffd06a; }
+    .badge-text { background: #274a5a; color: #6ad4ff; }
+    .badge-code { background: #4a275a; color: #d46aff; }
+    .badge-video { background: #5a2727; color: #ff6a6a; }
+    .badge-audio { background: #27505a; color: #6affec; }
+    .badge-other { background: #3a3a3a; color: #aaa; }
+
+    #header-actions {
+      display: flex;
+      gap: 8px;
+      min-width: 80px;
+      justify-content: flex-end;
+    }
+
+    .btn-icon {
+      padding: 8px 12px;
+      font-size: 13px;
+      background: #222;
+      color: #888;
+      border: 1px solid #333;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: #333;
+      color: #fff;
+      border-color: #444;
+    }
+
+    .btn-danger {
+      background: #3a1a1a;
+      border-color: #552222;
+      color: #ff6666;
+    }
+
+    .btn-danger:hover {
+      background: #4a2222;
+      border-color: #773333;
+    }
+
+    /* Content viewer */
+    #content-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0d0d0d;
+      position: relative;
+    }
+
+    #image-viewer {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    #text-viewer {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 40px;
+    }
+
+    #text-content {
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    #text-content h1, #text-content h2, #text-content h3 {
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+      color: #fff;
+    }
+
+    #text-content h1 { font-size: 2em; border-bottom: 1px solid #333; padding-bottom: 0.3em; }
+    #text-content h2 { font-size: 1.5em; }
+    #text-content h3 { font-size: 1.25em; }
+
+    #text-content p { margin-bottom: 1em; }
+
+    #text-content ul, #text-content ol {
+      margin-left: 2em;
+      margin-bottom: 1em;
+    }
+
+    #text-content code {
+      background: #1e1e1e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'SF Mono', Monaco, 'Fira Code', monospace;
+      font-size: 0.9em;
+    }
+
+    #text-content pre {
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 1em;
+    }
+
+    #text-content pre code {
+      background: none;
+      padding: 0;
+    }
+
+    #text-content a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    #text-content a:hover {
+      text-decoration: underline;
+    }
+
+    #text-content blockquote {
+      border-left: 3px solid #444;
+      padding-left: 1em;
+      margin-left: 0;
+      margin-bottom: 1em;
+      color: #888;
+    }
+
+    #pdf-viewer {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    #pdf-viewer canvas {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      max-width: 100%;
+    }
+
+    #video-viewer, #audio-viewer {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 8px;
+    }
+
+    #audio-viewer {
+      width: 400px;
+    }
+
+    #unsupported-viewer {
+      text-align: center;
+      color: #666;
+    }
+
+    #unsupported-viewer .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    #file-size {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* Instructions bar */
+    #instructions {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9) 30%);
+      padding: 40px 20px 20px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .action-hint {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      color: #fff;
+      font-family: 'SF Mono', Monaco, monospace;
+    }
+
+    .key-delete { background: #3a1a1a; border-color: #552222; color: #ff6666; }
+    .key-keep { background: #1a3a1a; border-color: #225522; color: #66ff66; }
+    .key-move { background: #1a2a3a; border-color: #224455; color: #66aaff; }
+
+    /* Move Modal */
+    #move-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    #move-modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      width: 500px;
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: #fff;
+    }
+
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .new-folder-input {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .new-folder-input input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 14px;
+      background: #0d0d0d;
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 6px;
+      outline: none;
+    }
+
+    .new-folder-input input:focus {
+      border-color: #0066ff;
+    }
+
+    .current-path {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: #0d0d0d;
+      border-radius: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .folder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #222;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .folder-item:hover {
+      background: #2a2a2a;
+      border-color: #444;
+    }
+
+    .folder-item.parent {
+      color: #888;
+    }
+
+    .folder-icon {
+      font-size: 16px;
+    }
+
+    .folder-name {
+      font-size: 14px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .folder-select-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #0066ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .folder-item:hover .folder-select-btn {
+      opacity: 1;
+    }
+
+    /* Confirm Screen */
+    #confirm-screen {
+      flex-direction: column;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    #confirm-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    #confirm-header h2 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    #delete-count {
+      color: #ff6666;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    #confirm-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    #confirm-buttons button {
+      padding: 12px 28px;
+      font-size: 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    #btn-confirm-delete {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    #btn-confirm-delete:hover {
+      background: #b91c1c;
+    }
+
+    #btn-cancel-delete {
+      background: #333;
+      color: #fff;
+    }
+
+    #btn-cancel-delete:hover {
+      background: #444;
+    }
+
+    #file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .grid-item {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .grid-item-preview {
+      height: 120px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111;
+      overflow: hidden;
+    }
+
+    .grid-item-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .grid-item-preview .preview-icon {
+      font-size: 40px;
+      color: #444;
+    }
+
+    .grid-item-name {
+      padding: 10px;
+      font-size: 12px;
+      color: #999;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    /* Loading state */
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #333;
+      border-top-color: #0066ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Hide viewers by default */
+    #image-viewer, #text-viewer, #pdf-viewer, #video-viewer, #audio-viewer, #unsupported-viewer {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Setup Screen -->
+  <div id="setup-screen" class="screen active">
+    <h1>File Triage</h1>
+    <p>Quickly sort through files - keep, delete, or move them to folders</p>
+    <div class="input-group">
+      <input type="text" id="folder-path" placeholder="Enter folder path (e.g., /Users/you/Downloads)">
+      <button class="btn-primary" id="btn-load">Load Files</button>
+    </div>
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">All Files</button>
+      <button class="filter-btn" data-filter="image">Images</button>
+      <button class="filter-btn" data-filter="document">Documents</button>
+      <button class="filter-btn" data-filter="text">Text</button>
+      <button class="filter-btn" data-filter="code">Code</button>
+      <button class="filter-btn" data-filter="video">Video</button>
+      <button class="filter-btn" data-filter="audio">Audio</button>
+    </div>
+    <div id="error-message" class="error"></div>
+  </div>
+
+  <!-- Triage Screen -->
+  <div id="triage-screen" class="screen">
+    <div id="header">
+      <div id="progress">1 / 10</div>
+      <div id="file-info">
+        <span id="filename">filename.jpg</span>
+        <span class="file-badge badge-image" id="file-badge">IMAGE</span>
+      </div>
+      <div id="header-actions">
+        <button class="btn-icon btn-danger" id="btn-stop">Stop</button>
+      </div>
+    </div>
+
+    <div id="content-container">
+      <img id="image-viewer" alt="Preview">
+      <div id="text-viewer"><div id="text-content"></div></div>
+      <div id="pdf-viewer"></div>
+      <video id="video-viewer" controls></video>
+      <audio id="audio-viewer" controls></audio>
+      <div id="unsupported-viewer">
+        <div class="icon">📄</div>
+        <div id="unsupported-name"></div>
+        <div id="file-size"></div>
+      </div>
+      <div class="loading-spinner" id="loading-spinner" style="display: none;"></div>
+    </div>
+
+    <div id="instructions">
+      <div class="action-hint"><span class="key key-delete">←</span> Delete</div>
+      <div class="action-hint"><span class="key key-keep">→</span> Keep</div>
+      <div class="action-hint"><span class="key key-move">M</span> Move to folder</div>
+      <div class="action-hint"><span class="key">⌫</span> Undo</div>
+    </div>
+  </div>
+
+  <!-- Move Modal -->
+  <div id="move-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Move to folder</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="new-folder-input">
+          <input type="text" id="new-folder-name" placeholder="Create new folder...">
+          <button class="btn-primary" id="btn-create-folder" style="padding: 10px 16px; font-size: 13px;">Create & Move</button>
+        </div>
+        <div class="current-path" id="browse-path"></div>
+        <div class="folder-list" id="folder-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Screen -->
+  <div id="confirm-screen" class="screen">
+    <div id="confirm-header">
+      <h2>Review Marked Files</h2>
+      <p id="delete-count">5 file(s) will be permanently deleted</p>
+      <div id="confirm-buttons">
+        <button id="btn-cancel-delete">Cancel (Restore All)</button>
+        <button id="btn-confirm-delete">Confirm Delete</button>
+      </div>
+    </div>
+    <div id="file-grid"></div>
+  </div>
+
+  <script>
+    // PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const state = {
+      files: [],
+      currentIndex: 0,
+      sourcePath: '',
+      markedForDeletion: new Set(),
+      movedFiles: new Map(), // fileName -> destinationPath
+      history: [],
+      filterCategory: 'all',
+      browsePath: ''
+    };
+
+    const screens = {
+      setup: document.getElementById('setup-screen'),
+      triage: document.getElementById('triage-screen'),
+      confirm: document.getElementById('confirm-screen')
+    };
+
+    const viewers = {
+      image: document.getElementById('image-viewer'),
+      text: document.getElementById('text-viewer'),
+      pdf: document.getElementById('pdf-viewer'),
+      video: document.getElementById('video-viewer'),
+      audio: document.getElementById('audio-viewer'),
+      unsupported: document.getElementById('unsupported-viewer')
+    };
+
+    const elements = {
+      folderPath: document.getElementById('folder-path'),
+      btnLoad: document.getElementById('btn-load'),
+      errorMessage: document.getElementById('error-message'),
+      progress: document.getElementById('progress'),
+      filename: document.getElementById('filename'),
+      fileBadge: document.getElementById('file-badge'),
+      textContent: document.getElementById('text-content'),
+      btnStop: document.getElementById('btn-stop'),
+      fileGrid: document.getElementById('file-grid'),
+      deleteCount: document.getElementById('delete-count'),
+      btnConfirmDelete: document.getElementById('btn-confirm-delete'),
+      btnCancelDelete: document.getElementById('btn-cancel-delete'),
+      moveModal: document.getElementById('move-modal'),
+      modalClose: document.getElementById('modal-close'),
+      folderList: document.getElementById('folder-list'),
+      browsePath: document.getElementById('browse-path'),
+      newFolderName: document.getElementById('new-folder-name'),
+      btnCreateFolder: document.getElementById('btn-create-folder'),
+      loadingSpinner: document.getElementById('loading-spinner'),
+      unsupportedName: document.getElementById('unsupported-name'),
+      fileSize: document.getElementById('file-size')
+    };
+
+    // API calls
+    async function loadFiles(folderPath, filterCategory) {
+      const response = await fetch('/api/load-files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath, filterCategory })
+      });
+      return response.json();
+    }
+
+    async function getFileContent(filePath) {
+      const response = await fetch(`/api/file-content?path=${encodeURIComponent(filePath)}`);
+      return response.json();
+    }
+
+    async function getFileInfo(filePath) {
+      const response = await fetch(`/api/file-info?path=${encodeURIComponent(filePath)}`);
+      return response.json();
+    }
+
+    async function markForDeletion(filePath) {
+      const response = await fetch('/api/mark-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath, filePath })
+      });
+      return response.json();
+    }
+
+    async function moveFile(filePath, destFolder, createIfMissing = false) {
+      const response = await fetch('/api/move-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath, filePath, destFolder, createIfMissing })
+      });
+      return response.json();
+    }
+
+    async function restoreFile(fileName) {
+      const response = await fetch('/api/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath, fileName })
+      });
+      return response.json();
+    }
+
+    async function getMarkedFiles() {
+      const response = await fetch('/api/get-marked', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath })
+      });
+      return response.json();
+    }
+
+    async function confirmDeletion() {
+      const response = await fetch('/api/confirm-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath })
+      });
+      return response.json();
+    }
+
+    async function cancelDeletion() {
+      const response = await fetch('/api/cancel-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sourcePath: state.sourcePath })
+      });
+      return response.json();
+    }
+
+    async function listFolders(folderPath) {
+      const response = await fetch('/api/list-folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderPath })
+      });
+      return response.json();
+    }
+
+    // Screen management
+    function showScreen(screen) {
+      Object.values(screens).forEach(s => s.classList.remove('active'));
+      screens[screen].classList.add('active');
+    }
+
+    // Hide all viewers
+    function hideAllViewers() {
+      Object.values(viewers).forEach(v => v.style.display = 'none');
+      viewers.video.pause();
+      viewers.audio.pause();
+    }
+
+    // Format file size
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+
+    // Display current file
+    async function displayCurrentFile() {
+      if (state.currentIndex >= state.files.length) {
+        showConfirmScreen();
+        return;
+      }
+
+      const file = state.files[state.currentIndex];
+      elements.filename.textContent = file.name;
+      elements.progress.textContent = `${state.currentIndex + 1} / ${state.files.length}`;
+
+      // Update badge
+      elements.fileBadge.textContent = file.category.toUpperCase();
+      elements.fileBadge.className = `file-badge badge-${file.category}`;
+
+      hideAllViewers();
+      elements.loadingSpinner.style.display = 'block';
+
+      try {
+        switch (file.category) {
+          case 'image':
+            viewers.image.src = `/api/file?path=${encodeURIComponent(file.path)}`;
+            viewers.image.onload = () => {
+              elements.loadingSpinner.style.display = 'none';
+              viewers.image.style.display = 'block';
+            };
+            break;
+
+          case 'text':
+          case 'code':
+            const textResult = await getFileContent(file.path);
+            elements.loadingSpinner.style.display = 'none';
+            if (textResult.success) {
+              if (file.ext === '.md') {
+                elements.textContent.innerHTML = marked.parse(textResult.content);
+              } else {
+                const escaped = textResult.content
+                  .replace(/&/g, '&amp;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;');
+                elements.textContent.innerHTML = `<pre><code>${escaped}</code></pre>`;
+                hljs.highlightAll();
+              }
+              viewers.text.style.display = 'block';
+              viewers.text.scrollTop = 0;
+            }
+            break;
+
+          case 'document':
+            if (file.ext === '.pdf') {
+              viewers.pdf.innerHTML = '';
+              elements.loadingSpinner.style.display = 'none';
+              viewers.pdf.style.display = 'flex';
+
+              const loadingTask = pdfjsLib.getDocument(`/api/file?path=${encodeURIComponent(file.path)}`);
+              const pdf = await loadingTask.promise;
+
+              for (let i = 1; i <= Math.min(pdf.numPages, 10); i++) {
+                const page = await pdf.getPage(i);
+                const scale = 1.5;
+                const viewport = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                await page.render({ canvasContext: context, viewport }).promise;
+                viewers.pdf.appendChild(canvas);
+              }
+
+              if (pdf.numPages > 10) {
+                const notice = document.createElement('div');
+                notice.style.cssText = 'color: #666; font-size: 14px; padding: 20px;';
+                notice.textContent = `Showing first 10 of ${pdf.numPages} pages`;
+                viewers.pdf.appendChild(notice);
+              }
+            } else {
+              await showUnsupportedFile(file);
+            }
+            break;
+
+          case 'video':
+            elements.loadingSpinner.style.display = 'none';
+            viewers.video.src = `/api/file?path=${encodeURIComponent(file.path)}`;
+            viewers.video.style.display = 'block';
+            break;
+
+          case 'audio':
+            elements.loadingSpinner.style.display = 'none';
+            viewers.audio.src = `/api/file?path=${encodeURIComponent(file.path)}`;
+            viewers.audio.style.display = 'block';
+            break;
+
+          default:
+            await showUnsupportedFile(file);
+        }
+      } catch (error) {
+        console.error('Error displaying file:', error);
+        await showUnsupportedFile(file);
+      }
+    }
+
+    async function showUnsupportedFile(file) {
+      elements.loadingSpinner.style.display = 'none';
+      elements.unsupportedName.textContent = file.name;
+
+      const info = await getFileInfo(file.path);
+      if (info.success) {
+        elements.fileSize.textContent = formatSize(info.size);
+      }
+
+      viewers.unsupported.style.display = 'block';
+    }
+
+    // Actions
+    async function deleteCurrentFile() {
+      const file = state.files[state.currentIndex];
+
+      state.history.push({
+        action: 'delete',
+        index: state.currentIndex,
+        file: file
+      });
+
+      await markForDeletion(file.path);
+      state.markedForDeletion.add(file.name);
+
+      state.currentIndex++;
+      displayCurrentFile();
+    }
+
+    function keepCurrentFile() {
+      state.history.push({
+        action: 'keep',
+        index: state.currentIndex
+      });
+
+      state.currentIndex++;
+      displayCurrentFile();
+    }
+
+    async function moveCurrentFile(destFolder, createIfMissing = false) {
+      const file = state.files[state.currentIndex];
+
+      const result = await moveFile(file.path, destFolder, createIfMissing);
+
+      if (!result.success) {
+        alert(`Move failed: ${result.error}`);
+        return;
+      }
+
+      state.history.push({
+        action: 'move',
+        index: state.currentIndex,
+        file: file,
+        destination: destFolder
+      });
+
+      state.movedFiles.set(file.name, destFolder);
+      closeMoveModal();
+
+      state.currentIndex++;
+      displayCurrentFile();
+    }
+
+    async function undoLastAction() {
+      if (state.history.length === 0) return;
+
+      const lastAction = state.history.pop();
+
+      if (lastAction.action === 'delete') {
+        await restoreFile(lastAction.file.name);
+        state.markedForDeletion.delete(lastAction.file.name);
+      } else if (lastAction.action === 'move') {
+        // Move file back
+        const currentPath = state.movedFiles.get(lastAction.file.name);
+        if (currentPath) {
+          const fullPath = currentPath.startsWith('/')
+            ? `${currentPath}/${lastAction.file.name}`
+            : `${state.sourcePath}/${currentPath}/${lastAction.file.name}`;
+
+          await moveFile(fullPath, state.sourcePath);
+          state.movedFiles.delete(lastAction.file.name);
+        }
+      }
+
+      state.currentIndex = lastAction.index;
+      displayCurrentFile();
+    }
+
+    // Move modal
+    function openMoveModal() {
+      state.browsePath = state.sourcePath;
+      elements.moveModal.classList.add('active');
+      elements.newFolderName.value = '';
+      loadFolderList(state.browsePath);
+    }
+
+    function closeMoveModal() {
+      elements.moveModal.classList.remove('active');
+    }
+
+    async function loadFolderList(folderPath) {
+      const result = await listFolders(folderPath);
+
+      if (!result.success) {
+        alert(`Error: ${result.error}`);
+        return;
+      }
+
+      state.browsePath = result.currentPath;
+      elements.browsePath.textContent = result.currentPath;
+      elements.folderList.innerHTML = '';
+
+      // Parent folder option
+      if (result.parentPath) {
+        const parentItem = document.createElement('div');
+        parentItem.className = 'folder-item parent';
+        parentItem.innerHTML = `
+          <span class="folder-icon">📁</span>
+          <span class="folder-name">..</span>
+        `;
+        parentItem.addEventListener('click', () => loadFolderList(result.parentPath));
+        elements.folderList.appendChild(parentItem);
+      }
+
+      // Subfolders
+      result.folders.forEach(folder => {
+        const item = document.createElement('div');
+        item.className = 'folder-item';
+        item.innerHTML = `
+          <span class="folder-icon">📁</span>
+          <span class="folder-name">${folder.name}</span>
+          <button class="folder-select-btn">Move here</button>
+        `;
+
+        item.querySelector('.folder-name').addEventListener('click', (e) => {
+          e.stopPropagation();
+          loadFolderList(folder.path);
+        });
+
+        item.querySelector('.folder-select-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          moveCurrentFile(folder.path);
+        });
+
+        elements.folderList.appendChild(item);
+      });
+    }
+
+    // Confirm screen
+    async function showConfirmScreen() {
+      const result = await getMarkedFiles();
+
+      if (result.files.length === 0) {
+        alert('Triage complete! No files marked for deletion.');
+        showScreen('setup');
+        return;
+      }
+
+      elements.deleteCount.textContent = `${result.files.length} file(s) will be permanently deleted`;
+
+      elements.fileGrid.innerHTML = '';
+      result.files.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'grid-item';
+
+        let preview = '';
+        if (file.category === 'image') {
+          preview = `<img src="/api/file?path=${encodeURIComponent(file.path)}" alt="${file.name}">`;
+        } else {
+          const icons = {
+            document: '📄',
+            text: '📝',
+            code: '💻',
+            video: '🎬',
+            audio: '🎵',
+            other: '📎'
+          };
+          preview = `<span class="preview-icon">${icons[file.category] || '📄'}</span>`;
+        }
+
+        item.innerHTML = `
+          <div class="grid-item-preview">${preview}</div>
+          <div class="grid-item-name">${file.name}</div>
+        `;
+        elements.fileGrid.appendChild(item);
+      });
+
+      showScreen('confirm');
+    }
+
+    // Event listeners
+    elements.btnLoad.addEventListener('click', async () => {
+      const folderPath = elements.folderPath.value.trim();
+
+      if (!folderPath) {
+        elements.errorMessage.textContent = 'Please enter a folder path';
+        return;
+      }
+
+      elements.errorMessage.textContent = '';
+      elements.btnLoad.disabled = true;
+      elements.btnLoad.textContent = 'Loading...';
+
+      try {
+        const result = await loadFiles(folderPath, state.filterCategory);
+
+        if (!result.success) {
+          elements.errorMessage.textContent = result.error;
+          return;
+        }
+
+        if (result.files.length === 0) {
+          elements.errorMessage.textContent = 'No files found matching the filter';
+          return;
+        }
+
+        state.files = result.files;
+        state.sourcePath = result.sourcePath;
+        state.currentIndex = 0;
+        state.markedForDeletion.clear();
+        state.movedFiles.clear();
+        state.history = [];
+
+        showScreen('triage');
+        displayCurrentFile();
+      } catch (error) {
+        elements.errorMessage.textContent = `Error: ${error.message}`;
+      } finally {
+        elements.btnLoad.disabled = false;
+        elements.btnLoad.textContent = 'Load Files';
+      }
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.filterCategory = btn.dataset.filter;
+      });
+    });
+
+    elements.btnStop.addEventListener('click', () => {
+      if (confirm('Stop triaging and review marked files?')) {
+        showConfirmScreen();
+      }
+    });
+
+    elements.btnConfirmDelete.addEventListener('click', async () => {
+      if (!confirm(`Permanently delete ${state.markedForDeletion.size} file(s)? This cannot be undone.`)) {
+        return;
+      }
+
+      await confirmDeletion();
+      alert('Files deleted successfully!');
+      showScreen('setup');
+    });
+
+    elements.btnCancelDelete.addEventListener('click', async () => {
+      await cancelDeletion();
+      alert('All files restored!');
+      showScreen('setup');
+    });
+
+    elements.modalClose.addEventListener('click', closeMoveModal);
+
+    elements.moveModal.addEventListener('click', (e) => {
+      if (e.target === elements.moveModal) {
+        closeMoveModal();
+      }
+    });
+
+    elements.btnCreateFolder.addEventListener('click', () => {
+      const folderName = elements.newFolderName.value.trim();
+      if (!folderName) {
+        alert('Please enter a folder name');
+        return;
+      }
+
+      const destPath = `${state.browsePath}/${folderName}`;
+      moveCurrentFile(destPath, true);
+    });
+
+    elements.newFolderName.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        elements.btnCreateFolder.click();
+      }
+    });
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      // Don't capture keys if typing in input
+      if (e.target.tagName === 'INPUT') return;
+
+      if (screens.triage.classList.contains('active') && !elements.moveModal.classList.contains('active')) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          deleteCurrentFile();
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          keepCurrentFile();
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          undoLastAction();
+        } else if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          openMoveModal();
+        }
+      }
+
+      // Escape closes modal
+      if (e.key === 'Escape' && elements.moveModal.classList.contains('active')) {
+        closeMoveModal();
+      }
+    });
+
+    // Enter key to load files
+    elements.folderPath.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        elements.btnLoad.click();
+      }
+    });
+  </script>
+</body>
+</html>

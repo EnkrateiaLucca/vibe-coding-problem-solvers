@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideas Swiper</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .stats {
+            margin-bottom: 20px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .card-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            perspective: 1000px;
+        }
+
+        .card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: grab;
+            user-select: none;
+            transition: transform 0.1s ease-out, opacity 0.3s;
+        }
+
+        .card.dragging { cursor: grabbing; transition: none; }
+        .card.swipe-left { transform: translateX(-150%) rotate(-30deg); opacity: 0; }
+        .card.swipe-right { transform: translateX(150%) rotate(30deg); opacity: 0; }
+
+        .card-overlay {
+            position: absolute;
+            top: 20px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .overlay-keep { right: 20px; background: #4ade80; color: #000; }
+        .overlay-delete { left: 20px; background: #f87171; color: #000; }
+
+        .controls {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover { transform: scale(1.1); }
+        .btn:active { transform: scale(0.95); }
+
+        .btn-delete { background: #f87171; }
+        .btn-keep { background: #4ade80; }
+
+        .btn-undo {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+            background: #64748b;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .file-input {
+            margin-bottom: 20px;
+        }
+
+        .file-input input { display: none; }
+
+        .file-input label {
+            background: #4f46e5;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .file-input label:hover { background: #6366f1; }
+
+        .export-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .export-btn:hover { background: #059669; }
+
+        .empty-state {
+            text-align: center;
+            opacity: 0.6;
+            padding: 40px;
+        }
+
+        .keyboard-hint {
+            margin-top: 20px;
+            opacity: 0.5;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn btn-undo" onclick="undo()" title="Undo">↩</button>
+    <button class="export-btn" onclick="exportKept()">Export Kept ⬇</button>
+
+    <h1>💡 Ideas Swiper</h1>
+    <div class="stats" id="stats">Load a file to start</div>
+
+    <div class="file-input">
+        <label>
+            📁 Load ideas-money.md
+            <input type="file" accept=".md,.txt" onchange="loadFile(event)">
+        </label>
+    </div>
+
+    <div class="card-container" id="cardContainer">
+        <div class="empty-state">Load your ideas file to begin swiping</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-delete" onclick="swipe('left')" title="Delete">✕</button>
+        <button class="btn btn-keep" onclick="swipe('right')" title="Keep">✓</button>
+    </div>
+
+    <div class="keyboard-hint">← Delete | Keep → | Z Undo</div>
+
+    <script>
+        let ideas = [];
+        let currentIndex = 0;
+        let kept = [];
+        let deleted = [];
+        let history = [];
+
+        // Load from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('ideas-swiper-state');
+            if (saved) {
+                const state = JSON.parse(saved);
+                kept = state.kept || [];
+                deleted = state.deleted || [];
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('ideas-swiper-state', JSON.stringify({ kept, deleted }));
+        }
+
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                ideas = content.split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.startsWith('- '))
+                    .map(line => line.substring(2));
+
+                // Filter out already processed
+                loadState();
+                const processed = new Set([...kept, ...deleted]);
+                ideas = ideas.filter(idea => !processed.has(idea));
+
+                currentIndex = 0;
+                renderCard();
+                updateStats();
+            };
+            reader.readAsText(file);
+        }
+
+        function renderCard() {
+            const container = document.getElementById('cardContainer');
+
+            if (currentIndex >= ideas.length) {
+                container.innerHTML = '<div class="empty-state">🎉 All done! Export your kept ideas.</div>';
+                return;
+            }
+
+            const idea = ideas[currentIndex];
+            container.innerHTML = `
+                <div class="card" id="currentCard">
+                    <div class="card-overlay overlay-keep">KEEP</div>
+                    <div class="card-overlay overlay-delete">DELETE</div>
+                    <div class="card-text">${idea}</div>
+                </div>
+            `;
+
+            setupDrag();
+        }
+
+        function updateStats() {
+            const remaining = ideas.length - currentIndex;
+            document.getElementById('stats').textContent =
+                `Remaining: ${remaining} | Kept: ${kept.length} | Deleted: ${deleted.length}`;
+        }
+
+        function swipe(direction) {
+            const card = document.getElementById('currentCard');
+            if (!card) return;
+
+            const idea = ideas[currentIndex];
+            history.push({ idea, direction: direction === 'right' ? 'kept' : 'deleted' });
+
+            if (direction === 'right') {
+                kept.push(idea);
+                card.classList.add('swipe-right');
+            } else {
+                deleted.push(idea);
+                card.classList.add('swipe-left');
+            }
+
+            saveState();
+
+            setTimeout(() => {
+                currentIndex++;
+                renderCard();
+                updateStats();
+            }, 300);
+        }
+
+        function undo() {
+            if (history.length === 0) return;
+
+            const last = history.pop();
+            if (last.direction === 'kept') {
+                kept = kept.filter(i => i !== last.idea);
+            } else {
+                deleted = deleted.filter(i => i !== last.idea);
+            }
+
+            // Re-insert at current position
+            ideas.splice(currentIndex, 0, last.idea);
+            saveState();
+            renderCard();
+            updateStats();
+        }
+
+        function exportKept() {
+            if (kept.length === 0) {
+                alert('No kept ideas yet!');
+                return;
+            }
+
+            const content = '# Kept Ideas\n\n' + kept.map(i => '- ' + i).join('\n');
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'kept-ideas.md';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Drag/swipe handling
+        function setupDrag() {
+            const card = document.getElementById('currentCard');
+            if (!card) return;
+
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            const onStart = (x) => {
+                startX = x;
+                isDragging = true;
+                card.classList.add('dragging');
+            };
+
+            const onMove = (x) => {
+                if (!isDragging) return;
+                currentX = x - startX;
+                card.style.transform = `translateX(${currentX}px) rotate(${currentX * 0.05}deg)`;
+
+                // Show overlays
+                const keepOverlay = card.querySelector('.overlay-keep');
+                const deleteOverlay = card.querySelector('.overlay-delete');
+                keepOverlay.style.opacity = Math.min(currentX / 100, 1);
+                deleteOverlay.style.opacity = Math.min(-currentX / 100, 1);
+            };
+
+            const onEnd = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                card.classList.remove('dragging');
+
+                if (currentX > 100) {
+                    swipe('right');
+                } else if (currentX < -100) {
+                    swipe('left');
+                } else {
+                    card.style.transform = '';
+                    card.querySelector('.overlay-keep').style.opacity = 0;
+                    card.querySelector('.overlay-delete').style.opacity = 0;
+                }
+            };
+
+            // Mouse events
+            card.addEventListener('mousedown', (e) => onStart(e.clientX));
+            document.addEventListener('mousemove', (e) => onMove(e.clientX));
+            document.addEventListener('mouseup', onEnd);
+
+            // Touch events
+            card.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX));
+            document.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX));
+            document.addEventListener('touchend', onEnd);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') swipe('left');
+            if (e.key === 'ArrowRight') swipe('right');
+            if (e.key.toLowerCase() === 'z') undo();
+        });
+
+        loadState();
+    </script>
+</body>
+</html>

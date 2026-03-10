@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LLM Prompt Results Visualizer</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+  header { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin:16px 0; }
+  .card { border:1px solid #ddd; border-radius:12px; padding:12px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th, td { border: 1px solid #e5e5e5; padding: 8px; vertical-align: top; }
+  th { background:#fafafa; cursor:pointer; position:sticky; top:0; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; }
+  .muted { color:#666; }
+  input[type="search"]{ padding:8px; width:300px; }
+  .tag { display:inline-block; padding:2px 6px; border-radius:999px; border:1px solid #ddd; margin-right:6px; font-size:12px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>LLM Prompt Results</h1>
+    <input id="file" type="file" accept=".csv,.json" />
+    <input id="q" type="search" placeholder="Filter by provider/model/text…" />
+    <span id="meta" class="muted"></span>
+  </header>
+
+  <div class="cards" id="summary"></div>
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th data-k="provider">Provider</th>
+        <th data-k="model">Model</th>
+        <th data-k="latency_ms">Latency (ms)</th>
+        <th data-k="total_tokens">Tokens</th>
+        <th data-k="prompt">Prompt</th>
+        <th data-k="output">Output</th>
+        <th data-k="error">Error</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+const fileEl = document.getElementById('file');
+const qEl = document.getElementById('q');
+const metaEl = document.getElementById('meta');
+const tbody = document.querySelector('#tbl tbody');
+const summary = document.getElementById('summary');
+let rows = [];
+let sortKey = 'provider', sortAsc = true;
+
+fileEl.addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const text = await f.text();
+  if (f.name.endsWith('.json')) {
+    rows = JSON.parse(text);
+  } else {
+    rows = Papa.parse(text, { header:true, skipEmptyLines:true }).data;
+    // Coerce numbers
+    rows.forEach(r => {
+      ['latency_ms','input_tokens','output_tokens','total_tokens'].forEach(k => {
+        if (r[k] !== undefined && r[k] !== null && r[k] !== '') r[k] = Number(r[k]);
+      });
+    });
+  }
+  render();
+});
+
+qEl.addEventListener('input', render);
+
+document.querySelectorAll('th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = true; }
+    render();
+  });
+});
+
+function render() {
+  const q = (qEl.value || '').toLowerCase();
+  let data = rows.slice();
+  if (q) {
+    data = data.filter(r =>
+      JSON.stringify(r).toLowerCase().includes(q)
+    );
+  }
+  data.sort((a,b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return (av > bv ? 1 : av < bv ? -1 : 0) * (sortAsc ? 1 : -1);
+  });
+
+  tbody.innerHTML = '';
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="tag">${escape(r.provider || '')}</span></td>
+      <td class="mono">${escape(r.model || '')}</td>
+      <td>${fmtNum(r.latency_ms)}</td>
+      <td>${fmtNum(r.total_tokens)}</td>
+      <td class="mono">${escape(r.prompt || '')}</td>
+      <td class="mono">${escape(r.output || '')}</td>
+      <td class="mono" style="color:#b00">${escape(r.error || '')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // summary cards
+  const byProv = groupBy(data, 'provider');
+  const byModel = groupBy(data, 'model');
+  summary.innerHTML = `
+    ${card('Providers', Object.keys(byProv).length)}
+    ${card('Models', Object.keys(byModel).length)}
+    ${card('Avg Latency (ms)', avg(data.map(r => r.latency_ms)))}
+    ${card('Avg Tokens', avg(data.map(r => r.total_tokens)))}
+    ${card('Rows', data.length)}
+  `;
+  metaEl.textContent = `Sort: ${sortKey} ${sortAsc ? '↑' : '↓'} • Filter: ${q || 'none'}`;
+}
+
+function card(title, value){
+  return `<div class="card"><div class="muted">${title}</div><div style="font-size:24px;font-weight:600">${fmtNum(value)}</div></div>`;
+}
+function groupBy(arr, k){
+  return arr.reduce((m, r) => ((m[r[k]] = (m[r[k]] || [])).push(r), m), {});
+}
+function avg(xs){
+  const ys = xs.filter(x => typeof x === 'number' && !isNaN(x));
+  if (!ys.length) return '–';
+  return Math.round(ys.reduce((a,b)=>a+b,0)/ys.length);
+}
+function fmtNum(x){ return (x===null || x===undefined || x==='') ? '–' : (typeof x==='number' ? Math.round(x) : x); }
+function escape(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[c])); }
+</script>
+</body>
+</html>

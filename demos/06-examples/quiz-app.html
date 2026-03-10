@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 40px;
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-label:hover {
+            transform: scale(1.05);
+        }
+
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .question-card {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .question-card.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .alternatives {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .alternative {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .alternative:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateX(5px);
+        }
+
+        .alternative.selected {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .alternative.correct {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+
+        .alternative.incorrect {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+
+        .alternative.correct::before {
+            content: '✓ ';
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .alternative.incorrect::before {
+            content: '✗ ';
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .results-container {
+            display: none;
+            text-align: center;
+        }
+
+        .results-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .score-display {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 30px 0;
+        }
+
+        .score-message {
+            font-size: 1.5em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback.correct {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .feedback.incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Quiz App</h1>
+
+        <div class="upload-section" id="uploadSection">
+            <input type="file" id="fileInput" accept=".json">
+            <label for="fileInput" class="upload-label">
+                📁 Choose Quiz File
+            </label>
+            <p style="margin-top: 20px; color: #666;">Select a JSON file to start your quiz</p>
+        </div>
+
+        <div class="quiz-container" id="quizContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div id="questionsContainer"></div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="submitBtn" disabled>Submit Answer</button>
+                <button class="btn-secondary" id="nextBtn" style="display: none;">Next Question</button>
+            </div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <h2>🎉 Quiz Complete!</h2>
+            <div class="score-display" id="scoreDisplay"></div>
+            <div class="score-message" id="scoreMessage"></div>
+            <div class="stats" id="stats"></div>
+            <button class="btn-primary" id="restartBtn" style="margin-top: 30px;">Start New Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        let quizData = null;
+        let currentQuestion = 0;
+        let selectedAnswer = null;
+        let score = 0;
+        let answers = [];
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const quizContainer = document.getElementById('quizContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const questionsContainer = document.getElementById('questionsContainer');
+        const submitBtn = document.getElementById('submitBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const feedback = document.getElementById('feedback');
+        const progressFill = document.getElementById('progressFill');
+        const restartBtn = document.getElementById('restartBtn');
+
+        fileInput.addEventListener('change', handleFileUpload);
+        submitBtn.addEventListener('click', submitAnswer);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', restart);
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    let content = e.target.result;
+                    let data;
+
+                    // Try to parse the content
+                    try {
+                        data = JSON.parse(content);
+                    } catch {
+                        // If that fails, it might be double-encoded JSON string
+                        // Try parsing it as a string first, then parse again
+                        const stringContent = JSON.parse(content);
+                        data = JSON.parse(stringContent);
+                    }
+
+                    // Handle both formats: {questions: [...]} or direct array
+                    if (Array.isArray(data)) {
+                        quizData = data;
+                    } else if (data.questions && Array.isArray(data.questions)) {
+                        quizData = data.questions;
+                    } else {
+                        throw new Error('Invalid quiz format');
+                    }
+
+                    if (quizData.length === 0) {
+                        throw new Error('No questions found in quiz file');
+                    }
+
+                    startQuiz();
+                } catch (error) {
+                    alert('Error parsing JSON file. Please check the file format.\n\nExpected format:\n{\n  "questions": [\n    {\n      "question": "...",\n      "alternatives": [...],\n      "correct_answer": 0\n    }\n  ]\n}');
+                    console.error('Parse error:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function startQuiz() {
+            currentQuestion = 0;
+            selectedAnswer = null;
+            score = 0;
+            answers = [];
+
+            uploadSection.style.display = 'none';
+            quizContainer.classList.add('active');
+            resultsContainer.classList.remove('active');
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const question = quizData[currentQuestion];
+
+            questionsContainer.innerHTML = `
+                <div class="question-card active">
+                    <div class="question-number">Question ${currentQuestion + 1} of ${quizData.length}</div>
+                    <div class="question-text">${question.question}</div>
+                    <div class="alternatives">
+                        ${question.alternatives.map((alt, index) => `
+                            <div class="alternative" data-index="${index}">
+                                ${alt}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Update progress
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            progressFill.style.width = progress + '%';
+
+            // Add click handlers to alternatives
+            document.querySelectorAll('.alternative').forEach(alt => {
+                alt.addEventListener('click', selectAnswer);
+            });
+
+            // Reset UI
+            submitBtn.disabled = true;
+            submitBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            feedback.classList.remove('show', 'correct', 'incorrect');
+        }
+
+        function selectAnswer(event) {
+            // Remove previous selection
+            document.querySelectorAll('.alternative').forEach(alt => {
+                alt.classList.remove('selected');
+            });
+
+            // Add selection to clicked alternative
+            event.target.classList.add('selected');
+            selectedAnswer = parseInt(event.target.dataset.index);
+            submitBtn.disabled = false;
+        }
+
+        function submitAnswer() {
+            if (selectedAnswer === null) return;
+
+            const question = quizData[currentQuestion];
+            const isCorrect = selectedAnswer === question.correct_answer;
+
+            answers.push({
+                question: currentQuestion,
+                selected: selectedAnswer,
+                correct: question.correct_answer,
+                isCorrect
+            });
+
+            if (isCorrect) {
+                score++;
+            }
+
+            // Show feedback
+            document.querySelectorAll('.alternative').forEach((alt, index) => {
+                alt.style.pointerEvents = 'none';
+                if (index === question.correct_answer) {
+                    alt.classList.add('correct');
+                } else if (index === selectedAnswer && !isCorrect) {
+                    alt.classList.add('incorrect');
+                }
+            });
+
+            feedback.textContent = isCorrect
+                ? '✓ Correct! Well done!'
+                : `✗ Incorrect. The correct answer was: "${question.alternatives[question.correct_answer]}"`;
+            feedback.classList.add('show', isCorrect ? 'correct' : 'incorrect');
+
+            submitBtn.style.display = 'none';
+            nextBtn.style.display = 'inline-block';
+            nextBtn.textContent = currentQuestion === quizData.length - 1
+                ? 'See Results'
+                : 'Next Question';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            selectedAnswer = null;
+
+            if (currentQuestion >= quizData.length) {
+                showResults();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function showResults() {
+            quizContainer.classList.remove('active');
+            resultsContainer.classList.add('active');
+
+            const percentage = Math.round((score / quizData.length) * 100);
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const scoreMessage = document.getElementById('scoreMessage');
+            const statsContainer = document.getElementById('stats');
+
+            scoreDisplay.textContent = `${percentage}%`;
+
+            if (percentage === 100) {
+                scoreMessage.textContent = 'Perfect score! Outstanding!';
+            } else if (percentage >= 80) {
+                scoreMessage.textContent = 'Excellent work!';
+            } else if (percentage >= 60) {
+                scoreMessage.textContent = 'Good job!';
+            } else if (percentage >= 40) {
+                scoreMessage.textContent = 'Not bad, keep practicing!';
+            } else {
+                scoreMessage.textContent = 'Keep studying, you can do better!';
+            }
+
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${score}</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${quizData.length - score}</div>
+                    <div class="stat-label">Incorrect</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${quizData.length}</div>
+                    <div class="stat-label">Total Questions</div>
+                </div>
+            `;
+
+            // Animate progress to final state
+            progressFill.style.width = '100%';
+        }
+
+        function restart() {
+            fileInput.value = '';
+            uploadSection.style.display = 'block';
+            quizContainer.classList.remove('active');
+            resultsContainer.classList.remove('active');
+            quizData = null;
+        }
+    </script>
+</body>
+</html>
