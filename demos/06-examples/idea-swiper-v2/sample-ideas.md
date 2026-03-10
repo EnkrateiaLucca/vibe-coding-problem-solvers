@@ -1,0 +1,27 @@
+# Project Ideas Backlog
+
+- Build a CLI tool that converts voice memos to structured TODO lists
+- Create a browser extension that summarizes any webpage into 3 bullet points
+- Pomodoro timer that plays lo-fi beats and blocks distracting sites
+- Personal CRM app that reminds you to follow up with contacts
+- Markdown-to-slideshow converter with AI-generated speaker notes
+- Recipe scaler that adjusts ingredients based on number of servings
+- GitHub repo analyzer that scores README quality and suggests improvements
+- Daily journal app that uses AI to detect mood patterns over time
+- Expense tracker that categorizes spending from bank CSV exports
+- Flashcard generator from YouTube video transcripts
+- Local-first bookmark manager with full-text search
+- Meeting notes app that auto-extracts action items and deadlines
+- Browser-based pixel art editor with animation timeline
+- Habit tracker with streak visualization and accountability buddy matching
+- API mock server generator from OpenAPI specs
+- Terminal dashboard that shows system stats, weather, and calendar
+- AI-powered code review bot for small teams
+- Podcast episode summarizer with chapter markers
+- Simple invoicing tool for freelancers with PDF export
+- Multiplayer trivia game using websockets
+- Plant watering reminder app with species-specific schedules
+- Screenshot-to-code tool for quick UI prototyping
+- Reading list manager that estimates time to finish each book
+- Automated changelog generator from git commit history
+- Color palette generator from uploaded photos

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ideas Swiper</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  h1 { font-size: 2rem; margin-bottom: 8px; }
+  .stats { font-size: 0.95rem; color: #94a3b8; margin-bottom: 24px; }
+  .stats span { margin: 0 8px; }
+  .stats .kept { color: #4ade80; }
+  .stats .deleted { color: #f87171; }
+
+  /* ── Card container ── */
+  .card-container {
+    perspective: 800px;
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, #2a2a4a, #1e1e3a);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
+    cursor: grab;
+    transition: none;
+    will-change: transform;
+  }
+  .card.animating {
+    transition: transform .35s ease, opacity .35s ease;
+    pointer-events: none;
+  }
+
+  /* Overlays */
+  .card .overlay {
+    position: absolute;
+    top: 24px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    padding: 6px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .card .overlay.keep {
+    right: 20px;
+    color: #4ade80;
+    border: 3px solid #4ade80;
+  }
+  .card .overlay.delete {
+    left: 20px;
+    color: #f87171;
+    border: 3px solid #f87171;
+  }
+
+  /* ── Buttons ── */
+  .controls { display: flex; gap: 32px; margin-bottom: 20px; }
+  .controls button {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: none; cursor: pointer;
+    font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+    transition: transform .15s;
+  }
+  .controls button:hover { transform: scale(1.12); }
+  .btn-delete { background: rgba(248,113,113,.15); color: #f87171; }
+  .btn-keep   { background: rgba(74,222,128,.15);  color: #4ade80; }
+
+  .undo-btn {
+    position: fixed; top: 20px; left: 20px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(148,163,184,.15); color: #94a3b8;
+    border: none; cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .15s;
+  }
+  .undo-btn:hover { transform: scale(1.12); }
+
+  .export-btn {
+    position: fixed; top: 20px; right: 20px;
+    background: #10b981; color: #fff; border: none;
+    padding: 8px 18px; border-radius: 8px; cursor: pointer;
+    font-size: .9rem; font-weight: 600;
+    transition: transform .15s;
+  }
+  .export-btn:hover { transform: scale(1.05); }
+
+  .hint {
+    font-size: .8rem; color: #64748b; margin-top: 4px;
+  }
+
+  /* ── File loader ── */
+  .loader {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  .loader label {
+    background: rgba(255,255,255,.08);
+    padding: 12px 28px; border-radius: 12px;
+    cursor: pointer; transition: background .2s;
+  }
+  .loader label:hover { background: rgba(255,255,255,.14); }
+  .loader input { display: none; }
+  .empty-msg { color: #94a3b8; font-size: 1.05rem; text-align: center; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<button class="undo-btn" id="undoBtn" title="Undo (Z)">↩</button>
+<button class="export-btn" id="exportBtn">Export Kept</button>
+
+<h1>💡 Ideas Swiper</h1>
+
+<div class="stats" id="stats">
+  <span>Remaining: <strong id="remainCount">0</strong></span>
+  <span class="kept">Kept: <strong id="keptCount">0</strong></span>
+  <span class="deleted">Deleted: <strong id="delCount">0</strong></span>
+</div>
+
+<div class="card-container" id="cardContainer">
+  <!-- card or loader rendered here -->
+</div>
+
+<div class="controls" id="controls" style="display:none;">
+  <button class="btn-delete" id="btnDelete" title="Delete (←)">✕</button>
+  <button class="btn-keep" id="btnKeep" title="Keep (→)">✓</button>
+</div>
+
+<div class="hint" id="hint" style="display:none;">← Delete &nbsp;|&nbsp; Keep → &nbsp;|&nbsp; Z Undo</div>
+
+<script>
+const STORAGE_KEY = 'ideas-swiper-state';
+const container = document.getElementById('cardContainer');
+const controls  = document.getElementById('controls');
+const hint      = document.getElementById('hint');
+
+let allIdeas = [];   // original full list from file
+let ideas    = [];   // remaining queue
+let kept     = [];
+let deleted  = [];
+let history  = [];   // {text, direction}
+let dragging = false, startX = 0, currentX = 0, cardEl = null;
+
+// ── Persistence ──
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s) { kept = s.kept || []; deleted = s.deleted || []; }
+  } catch {}
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ kept, deleted }));
+}
+
+// ── Stats ──
+function updateStats() {
+  document.getElementById('remainCount').textContent = ideas.length;
+  document.getElementById('keptCount').textContent   = kept.length;
+  document.getElementById('delCount').textContent    = deleted.length;
+}
+
+// ── Render card ──
+function renderCard() {
+  container.innerHTML = '';
+  updateStats();
+
+  if (ideas.length === 0 && allIdeas.length > 0) {
+    container.innerHTML = '<div class="empty-msg">🎉 All done!<br>Export your kept ideas.</div>';
+    controls.style.display = 'none';
+    hint.style.display = 'none';
+    return;
+  }
+  if (allIdeas.length === 0) {
+    showLoader();
+    return;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <span class="overlay keep">KEEP</span>
+    <span class="overlay delete">DELETE</span>
+    <span class="idea-text">${escapeHtml(ideas[0])}</span>`;
+  container.appendChild(card);
+  cardEl = card;
+  controls.style.display = 'flex';
+  hint.style.display = 'block';
+  attachDrag(card);
+}
+
+function showLoader() {
+  controls.style.display = 'none';
+  hint.style.display = 'none';
+  container.innerHTML = `
+    <div class="loader">
+      <div class="empty-msg">Load your ideas file to begin swiping</div>
+      <label>📂 Choose .md or .txt file
+        <input type="file" accept=".md,.txt" id="fileInput">
+      </label>
+    </div>`;
+  document.getElementById('fileInput').addEventListener('change', handleFile);
+}
+
+// ── File parsing ──
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const lines = ev.target.result.split('\n');
+    allIdeas = lines
+      .filter(l => l.trimStart().startsWith('- '))
+      .map(l => l.trimStart().replace(/^-\s+/, ''));
+
+    loadState();
+    const processed = new Set([...kept, ...deleted]);
+    ideas = allIdeas.filter(i => !processed.has(i));
+    history = [];
+    renderCard();
+  };
+  reader.readAsText(file);
+}
+
+// ── Drag / touch ──
+function attachDrag(card) {
+  const onStart = (x) => { dragging = true; startX = x; currentX = 0; card.style.transition = 'none'; };
+  const onMove  = (x) => {
+    if (!dragging) return;
+    currentX = x - startX;
+    const rot = currentX * 0.05;
+    card.style.transform = `translateX(${currentX}px) rotate(${rot}deg)`;
+    const keepOv = card.querySelector('.overlay.keep');
+    const delOv  = card.querySelector('.overlay.delete');
+    keepOv.style.opacity = Math.min(Math.max(currentX / 100, 0), 1);
+    delOv.style.opacity  = Math.min(Math.max(-currentX / 100, 0), 1);
+  };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (currentX > 100)       swipe('right');
+    else if (currentX < -100) swipe('left');
+    else snapBack(card);
+  };
+
+  card.addEventListener('mousedown', e => { e.preventDefault(); onStart(e.clientX); });
+  window.addEventListener('mousemove', e => onMove(e.clientX));
+  window.addEventListener('mouseup', onEnd);
+
+  card.addEventListener('touchstart', e => onStart(e.touches[0].clientX), { passive: true });
+  window.addEventListener('touchmove', e => onMove(e.touches[0].clientX), { passive: true });
+  window.addEventListener('touchend', onEnd);
+}
+
+function snapBack(card) {
+  card.style.transition = 'transform .25s ease';
+  card.style.transform = 'translateX(0) rotate(0)';
+  card.querySelector('.overlay.keep').style.opacity = 0;
+  card.querySelector('.overlay.delete').style.opacity = 0;
+}
+
+// ── Swipe logic ──
+function swipe(dir) {
+  if (!ideas.length || !cardEl) return;
+  const idea = ideas.shift();
+  if (dir === 'right') kept.push(idea);
+  else                 deleted.push(idea);
+  history.push({ text: idea, direction: dir });
+  saveState();
+
+  // Animate out
+  const tx = dir === 'right' ? '150%' : '-150%';
+  const rot = dir === 'right' ? '30deg' : '-30deg';
+  cardEl.classList.add('animating');
+  cardEl.style.transform = `translateX(${tx}) rotate(${rot})`;
+  cardEl.style.opacity = '0';
+
+  setTimeout(renderCard, 300);
+}
+
+// ── Undo ──
+function undo() {
+  if (!history.length) return;
+  const last = history.pop();
+  if (last.direction === 'right') kept.splice(kept.lastIndexOf(last.text), 1);
+  else                            deleted.splice(deleted.lastIndexOf(last.text), 1);
+  ideas.unshift(last.text);
+  saveState();
+  renderCard();
+}
+
+// ── Export ──
+function exportKept() {
+  if (!kept.length) { alert('No ideas kept yet!'); return; }
+  const md = '# Kept Ideas\n\n' + kept.map(i => `- ${i}`).join('\n') + '\n';
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'kept-ideas.md'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') swipe('right');
+  else if (e.key === 'ArrowLeft') swipe('left');
+  else if (e.key.toLowerCase() === 'z') undo();
+});
+
+// ── Button wiring ──
+document.getElementById('btnDelete').addEventListener('click', () => swipe('left'));
+document.getElementById('btnKeep').addEventListener('click', () => swipe('right'));
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('exportBtn').addEventListener('click', exportKept);
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Init ──
+loadState();
+showLoader();
+updateStats();
+</script>
+</body>
+</html>
