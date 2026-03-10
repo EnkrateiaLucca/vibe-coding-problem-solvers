@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Quiz — AI-Powered</title>
+    <style>
+        /* ── CSS Custom Properties ─────────────────────────────── */
+        :root {
+            --bg-primary: #0f0e17;
+            --bg-secondary: #1a1932;
+            --bg-card: #232244;
+            --bg-input: #2a2950;
+            --text-primary: #fffffe;
+            --text-secondary: #a7a9be;
+            --text-muted: #6b6d80;
+            --accent: #7f5af0;
+            --accent-hover: #6b46d6;
+            --accent-glow: rgba(127, 90, 240, 0.25);
+            --success: #2cb67d;
+            --success-bg: rgba(44, 182, 125, 0.15);
+            --error: #e45858;
+            --error-bg: rgba(228, 88, 88, 0.15);
+            --warning: #f2c94c;
+            --border: #3a3960;
+            --border-hover: #4e4d7a;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ── Reset & Base ──────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Screen Management ─────────────────────────────────── */
+        .screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .screen.active {
+            display: flex;
+            animation: fadeIn 0.35s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Scrollbar ─────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        /* ── Common Components ─────────────────────────────────── */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--accent); background: var(--bg-card); }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 8px 14px;
+        }
+        .btn-ghost:hover { color: var(--text-primary); background: var(--bg-input); }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+        }
+
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
+
+        /* ── Toast ─────────────────────────────────────────────── */
+        .toast-container {
+            position: fixed;
+            top: var(--space-lg);
+            right: var(--space-lg);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .toast {
+            padding: var(--space-md) var(--space-lg);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            max-width: 380px;
+            box-shadow: var(--shadow);
+        }
+
+        .toast.success { background: var(--success); color: white; }
+        .toast.error { background: var(--error); color: white; }
+        .toast.info { background: var(--accent); color: white; }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        /* SCREEN 1: UPLOAD                                        */
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        #upload-screen {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl);
+            gap: var(--space-xl);
+        }
+
+        .upload-header {
+            text-align: center;
+        }
+
+        .upload-header h1 {
+            font-size: 2rem;
+            margin-bottom: var(--space-sm);
+            background: linear-gradient(135deg, var(--accent), #e07af0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .drop-zones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-lg);
+            width: 100%;
+            max-width: 700px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-2xl) var(--space-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: var(--bg-secondary);
+            position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .drop-zone.has-file {
+            border-color: var(--success);
+            border-style: solid;
+            background: var(--success-bg);
+        }
+
+        .drop-zone-icon {
+            font-size: 2.5rem;
+            margin-bottom: var(--space-md);
+        }
+
+        .drop-zone h3 {
+            font-size: 16px;
+            margin-bottom: var(--space-xs);
+        }
+
+        .drop-zone p {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .drop-zone .file-name {
+            color: var(--success);
+            font-size: 13px;
+            margin-top: var(--space-sm);
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .upload-actions .btn-primary {
+            padding: 14px 40px;
+            font-size: 16px;
+        }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        /* SCREEN 2: SETUP                                         */
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        #setup-screen {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl);
+            gap: var(--space-xl);
+        }
+
+        .setup-card {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .setup-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="password"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        /* Slider */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            height: 6px;
+        }
+
+        .slider-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        /* Difficulty pills */
+        .difficulty-pills {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .difficulty-pill {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .difficulty-pill:hover { border-color: var(--accent); color: var(--text-primary); }
+
+        .difficulty-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .api-key-row {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: center;
+        }
+
+        .api-key-row input { flex: 1; }
+
+        .api-key-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: var(--space-xs);
+        }
+
+        .api-key-status.saved { color: var(--success); }
+
+        .setup-actions {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .setup-actions .btn-primary { flex: 1; justify-content: center; }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        /* SCREEN 3: QUIZ                                          */
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        #quiz-screen {
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .quiz-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .quiz-header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .quiz-header h3 { font-size: 15px; }
+
+        .quiz-counter {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-input);
+            flex-shrink: 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #e07af0);
+            transition: width 0.4s ease;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .quiz-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Video panel */
+        .video-panel {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .video-panel video {
+            width: 100%;
+            max-height: 100%;
+            outline: none;
+        }
+
+        /* Question panel */
+        .question-panel {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: var(--space-xl);
+            gap: var(--space-lg);
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .option-btn {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--space-md);
+            padding: 14px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-family: var(--font-sans);
+            line-height: 1.4;
+            width: 100%;
+        }
+
+        .option-btn:hover:not(.answered) {
+            border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .option-label {
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 20px;
+            flex-shrink: 0;
+        }
+
+        .option-btn.correct {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+
+        .option-btn.correct .option-label { color: var(--success); }
+
+        .option-btn.incorrect {
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+
+        .option-btn.incorrect .option-label { color: var(--error); }
+
+        .option-btn.answered {
+            cursor: default;
+            opacity: 0.6;
+        }
+
+        .option-btn.correct.answered,
+        .option-btn.incorrect.answered {
+            opacity: 1;
+        }
+
+        /* Explanation area */
+        .explanation {
+            padding: var(--space-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .explanation-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            margin-bottom: var(--space-sm);
+        }
+
+        .explanation-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .timestamp-badges {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .timestamp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timestamp-badge:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Quiz nav */
+        .quiz-nav {
+            display: flex;
+            justify-content: space-between;
+            padding-top: var(--space-md);
+            border-top: 1px solid var(--border);
+            margin-top: auto;
+        }
+
+        .keyboard-hints {
+            display: flex;
+            gap: var(--space-lg);
+            justify-content: center;
+            padding: var(--space-sm) 0;
+        }
+
+        .keyboard-hints span {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .keyboard-hints kbd {
+            display: inline-block;
+            padding: 1px 6px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            margin: 0 2px;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 14, 23, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            gap: var(--space-lg);
+        }
+
+        .loading-overlay.hidden { display: none; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        /* SCREEN 4: RESULTS                                       */
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        #results-screen {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-2xl);
+            gap: var(--space-xl);
+        }
+
+        .results-card {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        .results-card h2 {
+            font-size: 1.6rem;
+            margin-bottom: var(--space-lg);
+        }
+
+        .score-display {
+            margin: var(--space-xl) 0;
+        }
+
+        .score-big {
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #e07af0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .score-percent {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-top: var(--space-xs);
+        }
+
+        .score-message {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: var(--space-xl);
+        }
+
+        .results-actions {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .results-actions .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        /* Review mode indicator */
+        .review-banner {
+            background: var(--accent-glow);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-sm);
+            padding: var(--space-sm) var(--space-md);
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* ── Responsive ────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .drop-zones {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-body {
+                grid-template-columns: 1fr;
+                grid-template-rows: 250px 1fr;
+            }
+
+            .video-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .question-panel {
+                padding: var(--space-md);
+            }
+
+            .keyboard-hints { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Generating quiz with Claude...</div>
+</div>
+
+<!-- ━━━━━━━ SCREEN 1: UPLOAD ━━━━━━━ -->
+<div class="screen active" id="upload-screen">
+    <div class="upload-header">
+        <h1>Video Quiz</h1>
+        <p>Upload a video and its Whisper.cpp transcript to generate an AI-powered quiz</p>
+    </div>
+
+    <div class="drop-zones">
+        <div class="drop-zone" id="videoDropZone">
+            <div class="drop-zone-icon">🎬</div>
+            <h3>Video File</h3>
+            <p>MP4, WebM, OGG, MOV</p>
+            <div class="file-name" id="videoFileName"></div>
+            <input type="file" id="videoInput" accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.mov,.mkv">
+        </div>
+        <div class="drop-zone" id="transcriptDropZone">
+            <div class="drop-zone-icon">📝</div>
+            <h3>Transcript JSON</h3>
+            <p>Whisper.cpp JSON output</p>
+            <div class="file-name" id="transcriptFileName"></div>
+            <input type="file" id="transcriptInput" accept="application/json,.json">
+        </div>
+    </div>
+
+    <div class="upload-actions">
+        <button class="btn btn-primary" id="continueToSetupBtn" disabled>Continue to Setup</button>
+        <p style="color: var(--text-muted); font-size: 12px;">Both files are required to proceed</p>
+    </div>
+</div>
+
+<!-- ━━━━━━━ SCREEN 2: SETUP ━━━━━━━ -->
+<div class="screen" id="setup-screen">
+    <div class="setup-card card">
+        <h2>Quiz Setup</h2>
+
+        <div class="form-group">
+            <label>Number of Questions</label>
+            <div class="slider-row">
+                <input type="range" id="questionCount" min="1" max="20" value="5">
+                <span class="slider-value" id="questionCountValue">5</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Difficulty</label>
+            <div class="difficulty-pills" id="difficultyPills">
+                <button class="difficulty-pill" data-difficulty="easy">Easy</button>
+                <button class="difficulty-pill" data-difficulty="medium">Medium</button>
+                <button class="difficulty-pill" data-difficulty="hard">Hard</button>
+                <button class="difficulty-pill active" data-difficulty="mixed">Mixed</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Custom Instructions (optional)</label>
+            <textarea id="customInstructions" placeholder="e.g. Focus on technical concepts, avoid jargon..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Anthropic API Key</label>
+            <div class="api-key-row">
+                <input type="password" id="apiKeyInput" placeholder="sk-ant-...">
+                <button class="btn btn-secondary" id="saveApiKeyBtn" style="white-space: nowrap;">Save</button>
+            </div>
+            <div class="api-key-status" id="apiKeyStatus"></div>
+        </div>
+
+        <div class="setup-actions">
+            <button class="btn btn-ghost" id="backToUploadBtn">Back</button>
+            <button class="btn btn-primary" id="generateQuizBtn">Generate Quiz</button>
+        </div>
+    </div>
+</div>
+
+<!-- ━━━━━━━ SCREEN 3: QUIZ ━━━━━━━ -->
+<div class="screen" id="quiz-screen">
+    <div class="quiz-header">
+        <div class="quiz-header-left">
+            <button class="btn btn-ghost" id="quitQuizBtn">Quit</button>
+            <h3 id="quizVideoTitle">Quiz</h3>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-md);">
+            <span class="quiz-counter" id="quizCounter">1 / 5</span>
+            <div class="review-banner" id="reviewBanner" style="display:none;">Review Mode</div>
+        </div>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+
+    <div class="quiz-body">
+        <div class="video-panel">
+            <video id="quizVideo" controls></video>
+        </div>
+        <div class="question-panel" id="questionPanel">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+
+    <div class="keyboard-hints" id="keyboardHints">
+        <span><kbd>1</kbd>-<kbd>4</kbd> Select answer</span>
+        <span><kbd>Enter</kbd> / <kbd>→</kbd> Next</span>
+        <span><kbd>←</kbd> Previous</span>
+        <span><kbd>Space</kbd> Play/Pause</span>
+    </div>
+</div>
+
+<!-- ━━━━━━━ SCREEN 4: RESULTS ━━━━━━━ -->
+<div class="screen" id="results-screen">
+    <div class="results-card card">
+        <h2>Quiz Complete!</h2>
+        <div class="score-display">
+            <div class="score-big" id="scoreBig">0/0</div>
+            <div class="score-percent" id="scorePercent">0%</div>
+        </div>
+        <div class="score-message" id="scoreMessage"></div>
+        <div class="results-actions">
+            <button class="btn btn-primary" id="reviewAnswersBtn">Review Answers</button>
+            <button class="btn btn-secondary" id="exportAnkiBtn">Export to Anki</button>
+            <button class="btn btn-ghost" id="tryAgainBtn">Try Again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* APP STATE                                                       */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const state = {
+    videoFile: null,
+    videoUrl: null,
+    transcriptSegments: [],
+    transcriptRaw: null,
+    questions: [],
+    currentIndex: 0,
+    answers: {},        // questionId → selectedOptionId
+    isReviewMode: false,
+    difficulty: 'mixed',
+};
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* UTILITIES                                                       */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.getElementById('toastContainer').appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function showLoading(text) {
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+/** Parse Whisper.cpp timestamp "HH:MM:SS,mmm" → seconds */
+function parseTimestamp(ts) {
+    if (typeof ts === 'number') return ts;
+    const m = String(ts).match(/(\d+):(\d+):(\d+)[,.](\d+)/);
+    if (!m) return 0;
+    return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseInt(m[3]) + parseInt(m[4]) / 1000;
+}
+
+/** Seconds → "M:SS" label */
+function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* SCREEN 1 — UPLOAD                                               */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const videoInput = document.getElementById('videoInput');
+const transcriptInput = document.getElementById('transcriptInput');
+const videoDropZone = document.getElementById('videoDropZone');
+const transcriptDropZone = document.getElementById('transcriptDropZone');
+const continueBtn = document.getElementById('continueToSetupBtn');
+
+function updateContinueBtn() {
+    continueBtn.disabled = !(state.videoFile && state.transcriptSegments.length);
+}
+
+// Drag-and-drop visual feedback
+[videoDropZone, transcriptDropZone].forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); });
+});
+
+videoDropZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleVideoFile(file);
+});
+
+transcriptDropZone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleTranscriptFile(file);
+});
+
+videoInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleVideoFile(e.target.files[0]);
+});
+
+transcriptInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleTranscriptFile(e.target.files[0]);
+});
+
+function handleVideoFile(file) {
+    const validTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+    const validExts = ['.mp4', '.webm', '.ogg', '.mov', '.mkv'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+        showToast('Please upload a valid video file (MP4, WebM, OGG, MOV, MKV)', 'error');
+        return;
+    }
+
+    if (state.videoUrl) URL.revokeObjectURL(state.videoUrl);
+    state.videoFile = file;
+    state.videoUrl = URL.createObjectURL(file);
+
+    document.getElementById('videoFileName').textContent = file.name;
+    videoDropZone.classList.add('has-file');
+    updateContinueBtn();
+}
+
+function handleTranscriptFile(file) {
+    if (!file.name.endsWith('.json')) {
+        showToast('Please upload a JSON transcript file', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            state.transcriptRaw = data;
+
+            // Parse Whisper.cpp format
+            if (!data.transcription || !Array.isArray(data.transcription)) {
+                throw new Error('Invalid format: expected { transcription: [...] }');
+            }
+
+            state.transcriptSegments = data.transcription.map((seg, i) => ({
+                id: `segment-${i}`,
+                text: (seg.text || '').trim(),
+                startTime: parseTimestamp(seg.timestamps?.from || seg.offsets?.from / 1000 || 0),
+                endTime: parseTimestamp(seg.timestamps?.to || seg.offsets?.to / 1000 || 0),
+            }));
+
+            document.getElementById('transcriptFileName').textContent = `${file.name} (${state.transcriptSegments.length} segments)`;
+            transcriptDropZone.classList.add('has-file');
+            showToast(`Loaded ${state.transcriptSegments.length} transcript segments`, 'success');
+            updateContinueBtn();
+        } catch (err) {
+            showToast(`Transcript error: ${err.message}`, 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+continueBtn.addEventListener('click', () => {
+    showScreen('setup-screen');
+    // Load saved API key
+    const savedKey = localStorage.getItem('vq_api_key');
+    if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+        document.getElementById('apiKeyStatus').textContent = 'Key loaded from storage';
+        document.getElementById('apiKeyStatus').className = 'api-key-status saved';
+    }
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* SCREEN 2 — SETUP                                                */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const questionCountSlider = document.getElementById('questionCount');
+const questionCountValue = document.getElementById('questionCountValue');
+
+questionCountSlider.addEventListener('input', () => {
+    questionCountValue.textContent = questionCountSlider.value;
+});
+
+// Difficulty pills
+document.getElementById('difficultyPills').addEventListener('click', e => {
+    const pill = e.target.closest('.difficulty-pill');
+    if (!pill) return;
+    document.querySelectorAll('.difficulty-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    state.difficulty = pill.dataset.difficulty;
+});
+
+// Save API key
+document.getElementById('saveApiKeyBtn').addEventListener('click', () => {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (!key) { showToast('Enter an API key first', 'error'); return; }
+    localStorage.setItem('vq_api_key', key);
+    document.getElementById('apiKeyStatus').textContent = 'Key saved to localStorage';
+    document.getElementById('apiKeyStatus').className = 'api-key-status saved';
+    showToast('API key saved', 'success');
+});
+
+document.getElementById('backToUploadBtn').addEventListener('click', () => showScreen('upload-screen'));
+
+// Generate Quiz
+document.getElementById('generateQuizBtn').addEventListener('click', generateQuiz);
+
+async function generateQuiz() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim() || localStorage.getItem('vq_api_key');
+    if (!apiKey) {
+        showToast('Please enter your Anthropic API key', 'error');
+        return;
+    }
+    // Save key for convenience
+    localStorage.setItem('vq_api_key', apiKey);
+
+    const numQuestions = parseInt(questionCountSlider.value);
+    const difficulty = state.difficulty;
+    const customInstructions = document.getElementById('customInstructions').value.trim();
+
+    // Build transcript text for the prompt
+    const transcriptText = state.transcriptSegments
+        .map(s => `[${formatTime(s.startTime)} - ${formatTime(s.endTime)}] ${s.text}`)
+        .join('\n');
+
+    const systemPrompt = `You are a quiz generator. Given a video transcript with timestamps, generate a multiple-choice quiz. Return ONLY a valid JSON array of question objects with no additional text.
+
+Each question object must have:
+- "id": unique string like "q1", "q2", etc.
+- "question": the question text
+- "options": array of exactly 4 option objects, each with:
+  - "id": "a", "b", "c", or "d"
+  - "text": the answer text
+  - "isCorrect": boolean (exactly one must be true)
+- "explanation": why the correct answer is right
+- "timestamp": object with "start" (seconds), "end" (seconds), "label" (formatted "M:SS") pointing to the relevant video section`;
+
+    const userPrompt = `Generate ${numQuestions} ${difficulty !== 'mixed' ? difficulty + ' difficulty' : 'mixed difficulty'} multiple-choice questions from this video transcript.
+
+${customInstructions ? `Additional instructions: ${customInstructions}\n` : ''}
+TRANSCRIPT:
+${transcriptText}
+
+Return ONLY a JSON array. No markdown, no code fences, just the raw JSON array.`;
+
+    showLoading('Generating quiz with Claude...');
+
+    try {
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': apiKey,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true',
+            },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: userPrompt }],
+            }),
+        });
+
+        if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `API error ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const text = data.content?.[0]?.text || '';
+
+        // Parse JSON — handle potential code fence wrappers
+        let jsonStr = text.trim();
+        const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (fenceMatch) jsonStr = fenceMatch[1].trim();
+
+        const questions = JSON.parse(jsonStr);
+        if (!Array.isArray(questions) || questions.length === 0) {
+            throw new Error('No questions generated');
+        }
+
+        state.questions = questions;
+        state.currentIndex = 0;
+        state.answers = {};
+        state.isReviewMode = false;
+
+        hideLoading();
+        startQuiz();
+        showToast(`Generated ${questions.length} questions`, 'success');
+    } catch (err) {
+        hideLoading();
+        showToast(`Generation failed: ${err.message}`, 'error');
+        console.error('Quiz generation error:', err);
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* SCREEN 3 — QUIZ                                                 */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const videoEl = document.getElementById('quizVideo');
+
+function startQuiz() {
+    showScreen('quiz-screen');
+
+    // Set video source
+    videoEl.src = state.videoUrl;
+    document.getElementById('quizVideoTitle').textContent = state.videoFile?.name || 'Quiz';
+
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const q = state.questions[state.currentIndex];
+    if (!q) return;
+
+    const total = state.questions.length;
+    const idx = state.currentIndex;
+    const answered = state.answers[q.id] !== undefined;
+
+    // Update header
+    document.getElementById('quizCounter').textContent = `${idx + 1} / ${total}`;
+    document.getElementById('progressFill').style.width = `${((idx + 1) / total) * 100}%`;
+    document.getElementById('reviewBanner').style.display = state.isReviewMode ? 'block' : 'none';
+
+    const panel = document.getElementById('questionPanel');
+
+    // Build question HTML
+    let html = `<div class="question-text">${escapeHtml(q.question)}</div>`;
+    html += '<div class="options-list">';
+
+    q.options.forEach(opt => {
+        let cls = 'option-btn';
+        if (answered || state.isReviewMode) {
+            cls += ' answered';
+            if (opt.isCorrect) cls += ' correct';
+            else if (state.answers[q.id] === opt.id) cls += ' incorrect';
+        }
+
+        html += `<button class="${cls}" data-option-id="${escapeHtml(opt.id)}">
+            <span class="option-label">${escapeHtml(opt.id.toUpperCase())}</span>
+            <span>${escapeHtml(opt.text)}</span>
+        </button>`;
+    });
+
+    html += '</div>';
+
+    // Show explanation if answered
+    if (answered || state.isReviewMode) {
+        html += `<div class="explanation">
+            <div class="explanation-title">Explanation</div>
+            <div class="explanation-text">${escapeHtml(q.explanation || '')}</div>`;
+
+        if (q.timestamp) {
+            html += `<div class="timestamp-badges">
+                <span class="timestamp-badge" data-time="${q.timestamp.start}">
+                    ▶ ${escapeHtml(q.timestamp.label || formatTime(q.timestamp.start))}
+                </span>
+            </div>`;
+        }
+
+        // Also show timestamps from individual options if they have them
+        const correctOpt = q.options.find(o => o.isCorrect);
+        if (correctOpt?.timestamp && (!q.timestamp || correctOpt.timestamp.start !== q.timestamp.start)) {
+            if (!html.includes('timestamp-badges')) {
+                html += '<div class="timestamp-badges">';
+            }
+            html += `<span class="timestamp-badge" data-time="${correctOpt.timestamp.start}">
+                ▶ ${escapeHtml(correctOpt.timestamp.label || formatTime(correctOpt.timestamp.start))}
+            </span>`;
+            if (!q.timestamp) html += '</div>';
+        }
+
+        html += '</div>';
+    }
+
+    // Navigation
+    html += '<div class="quiz-nav">';
+    html += idx > 0
+        ? '<button class="btn btn-ghost" id="prevQuestionBtn">← Previous</button>'
+        : '<span></span>';
+
+    if (answered || state.isReviewMode) {
+        if (idx < total - 1) {
+            html += '<button class="btn btn-primary" id="nextQuestionBtn">Next →</button>';
+        } else if (!state.isReviewMode) {
+            html += '<button class="btn btn-primary" id="finishQuizBtn">See Results</button>';
+        } else {
+            html += '<button class="btn btn-primary" id="backToResultsBtn">Back to Results</button>';
+        }
+    } else {
+        html += '<span></span>';
+    }
+    html += '</div>';
+
+    panel.innerHTML = html;
+
+    // Bind option clicks
+    if (!answered && !state.isReviewMode) {
+        panel.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', () => selectAnswer(q.id, btn.dataset.optionId));
+        });
+    }
+
+    // Bind nav
+    panel.querySelector('#prevQuestionBtn')?.addEventListener('click', () => {
+        if (state.currentIndex > 0) { state.currentIndex--; renderQuestion(); }
+    });
+    panel.querySelector('#nextQuestionBtn')?.addEventListener('click', () => {
+        if (state.currentIndex < state.questions.length - 1) { state.currentIndex++; renderQuestion(); }
+    });
+    panel.querySelector('#finishQuizBtn')?.addEventListener('click', showResults);
+    panel.querySelector('#backToResultsBtn')?.addEventListener('click', () => showScreen('results-screen'));
+
+    // Bind timestamp badges
+    panel.querySelectorAll('.timestamp-badge').forEach(badge => {
+        badge.addEventListener('click', () => {
+            const time = parseFloat(badge.dataset.time);
+            if (!isNaN(time)) {
+                videoEl.currentTime = time;
+                videoEl.play();
+            }
+        });
+    });
+}
+
+function selectAnswer(questionId, optionId) {
+    state.answers[questionId] = optionId;
+    renderQuestion();
+}
+
+// Quit quiz
+document.getElementById('quitQuizBtn').addEventListener('click', () => {
+    if (Object.keys(state.answers).length > 0) {
+        if (!confirm('Quit the quiz? Your progress will be lost.')) return;
+    }
+    showScreen('upload-screen');
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* KEYBOARD SHORTCUTS                                              */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+document.addEventListener('keydown', e => {
+    // Only active on quiz screen
+    if (!document.getElementById('quiz-screen').classList.contains('active')) return;
+
+    // Don't capture if typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    const q = state.questions[state.currentIndex];
+    if (!q) return;
+
+    const answered = state.answers[q.id] !== undefined;
+
+    // 1-4 to select answer
+    if (['1', '2', '3', '4'].includes(e.key) && !answered && !state.isReviewMode) {
+        e.preventDefault();
+        const optId = ['a', 'b', 'c', 'd'][parseInt(e.key) - 1];
+        const opt = q.options.find(o => o.id === optId);
+        if (opt) selectAnswer(q.id, opt.id);
+        return;
+    }
+
+    // Enter or ArrowRight → next
+    if ((e.key === 'Enter' || e.key === 'ArrowRight') && (answered || state.isReviewMode)) {
+        e.preventDefault();
+        if (state.currentIndex < state.questions.length - 1) {
+            state.currentIndex++;
+            renderQuestion();
+        } else if (!state.isReviewMode) {
+            showResults();
+        }
+        return;
+    }
+
+    // ArrowLeft → previous
+    if (e.key === 'ArrowLeft' && state.currentIndex > 0) {
+        e.preventDefault();
+        state.currentIndex--;
+        renderQuestion();
+        return;
+    }
+
+    // Space → play/pause
+    if (e.key === ' ') {
+        e.preventDefault();
+        videoEl.paused ? videoEl.play() : videoEl.pause();
+    }
+});
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* SCREEN 4 — RESULTS                                              */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function showResults() {
+    const total = state.questions.length;
+    let correct = 0;
+
+    state.questions.forEach(q => {
+        const selected = state.answers[q.id];
+        const correctOpt = q.options.find(o => o.isCorrect);
+        if (selected === correctOpt?.id) correct++;
+    });
+
+    const pct = Math.round((correct / total) * 100);
+
+    document.getElementById('scoreBig').textContent = `${correct}/${total}`;
+    document.getElementById('scorePercent').textContent = `${pct}%`;
+
+    let msg;
+    if (pct === 100) msg = 'Perfect score! You nailed every question.';
+    else if (pct >= 80) msg = 'Great job! You have a solid understanding of this material.';
+    else if (pct >= 60) msg = 'Good effort! Review the topics you missed to strengthen your knowledge.';
+    else if (pct >= 40) msg = 'Keep practicing! Try watching the video sections for the questions you missed.';
+    else msg = 'This is a tough topic! Review the video and try again — you\'ll improve.';
+
+    document.getElementById('scoreMessage').textContent = msg;
+    showScreen('results-screen');
+}
+
+// Review answers
+document.getElementById('reviewAnswersBtn').addEventListener('click', () => {
+    state.isReviewMode = true;
+    state.currentIndex = 0;
+    showScreen('quiz-screen');
+    renderQuestion();
+});
+
+// Try again
+document.getElementById('tryAgainBtn').addEventListener('click', () => {
+    state.answers = {};
+    state.currentIndex = 0;
+    state.isReviewMode = false;
+    showScreen('setup-screen');
+});
+
+// Anki export
+document.getElementById('exportAnkiBtn').addEventListener('click', exportAnki);
+
+function exportAnki() {
+    const videoName = state.videoFile?.name || 'Video';
+    let lines = ['#separator:semicolon', '#html:false', '#columns:Front;Back;Source', ''];
+
+    state.questions.forEach(q => {
+        const correctOpt = q.options.find(o => o.isCorrect);
+        const front = q.question.replace(/;/g, ',');
+        const back = (correctOpt?.text || '').replace(/;/g, ',')
+            + (q.explanation ? ' — ' + q.explanation.replace(/;/g, ',') : '');
+        const ts = q.timestamp?.label || '';
+        const source = `${videoName}${ts ? ' @ ' + ts : ''}`.replace(/;/g, ',');
+        lines.push(`${front};${back};${source}`);
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `quiz-${videoName.replace(/\.[^.]+$/, '')}-anki.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Anki export downloaded', 'success');
+}
+</script>
+</body>
+</html>
