@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Coding for Problem Solvers — Cheatsheet</title>
+    <style>
+        /* ========================================
+           MODULAR GRID/CARD LAYOUT TEMPLATE
+           Vibe Coding for Problem Solvers
+           Optimized for A4 printing (210mm × 297mm)
+           ======================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 18mm;
+            @top-left { content: none; }
+            @top-center { content: none; }
+            @top-right { content: none; }
+            @bottom-left { content: none; }
+            @bottom-center { content: none; }
+            @bottom-right { content: none; }
+        }
+
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            line-height: 1.5;
+            color: #000;
+            background: #fff;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 18mm;
+        }
+
+        .page-header {
+            text-align: center;
+            padding-bottom: 12pt;
+            margin-bottom: 15pt;
+            border-bottom: 3px solid #000;
+        }
+
+        .page-header h1 {
+            font-size: 24pt;
+            font-weight: 700;
+            margin-bottom: 6pt;
+            text-transform: uppercase;
+            letter-spacing: 2pt;
+        }
+
+        .page-header .subtitle {
+            font-size: 11pt;
+            color: #333;
+            margin-bottom: 4pt;
+        }
+
+        .page-header .meta {
+            font-size: 8.5pt;
+            color: #666;
+        }
+
+        .section-title {
+            font-size: 13pt;
+            font-weight: 700;
+            margin: 14pt 0 8pt 0;
+            padding: 5pt 10pt;
+            background: #000;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+            break-after: avoid;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8pt;
+            margin-bottom: 10pt;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8pt;
+            margin-bottom: 10pt;
+        }
+
+        .card {
+            border: 2px solid #000;
+            padding: 8pt;
+            background: #fff;
+            break-inside: avoid;
+        }
+
+        .card-title {
+            font-size: 10.5pt;
+            font-weight: 700;
+            margin-bottom: 6pt;
+            padding-bottom: 4pt;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .card-content {
+            font-size: 9pt;
+        }
+
+        .card-light {
+            border: 2px solid #000;
+            background: #f9f9f9;
+            padding: 8pt;
+            break-inside: avoid;
+        }
+
+        .info-box {
+            border: 2px solid #666;
+            border-left: 5px solid #000;
+            padding: 8pt 10pt;
+            margin: 8pt 0;
+            background: #f5f5f5;
+            break-inside: avoid;
+        }
+
+        .info-box-title {
+            font-weight: 700;
+            font-size: 10pt;
+            margin-bottom: 5pt;
+        }
+
+        .definition-card {
+            border: 2px solid #000;
+            padding: 8pt;
+            background: #fff;
+            break-inside: avoid;
+        }
+
+        .term {
+            font-weight: 700;
+            font-size: 10.5pt;
+            margin-bottom: 4pt;
+            color: #000;
+        }
+
+        .definition {
+            font-size: 9pt;
+            color: #333;
+        }
+
+        .code-card {
+            border: 2px solid #000;
+            background: #fff;
+            padding: 0;
+            break-inside: avoid;
+        }
+
+        .code-card-header {
+            background: #000;
+            color: #fff;
+            padding: 5pt 8pt;
+            font-weight: 700;
+            font-size: 9pt;
+        }
+
+        .code-card pre {
+            margin: 0;
+            padding: 8pt;
+            font-family: 'Courier New', 'Courier', monospace;
+            font-size: 8pt;
+            line-height: 1.4;
+            background: #f9f9f9;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+
+        .table-card {
+            border: 2px solid #000;
+            background: #fff;
+            padding: 0;
+            break-inside: avoid;
+        }
+
+        .table-card-header {
+            background: #000;
+            color: #fff;
+            padding: 5pt 10pt;
+            font-weight: 700;
+            font-size: 10pt;
+        }
+
+        .table-card table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+
+        .table-card th {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 700;
+            text-align: left;
+            padding: 5pt 7pt;
+            border-bottom: 2px solid #000;
+        }
+
+        .table-card td {
+            padding: 4pt 7pt;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .card ul, .card ol,
+        .card-light ul, .card-light ol {
+            margin-left: 14pt;
+        }
+
+        .card li, .card-light li {
+            margin-bottom: 3pt;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8pt;
+            margin: 10pt 0;
+        }
+
+        .comparison-item {
+            border: 2px solid #000;
+            padding: 8pt;
+            background: #fff;
+            break-inside: avoid;
+        }
+
+        .comparison-header {
+            font-weight: 700;
+            font-size: 10.5pt;
+            margin-bottom: 7pt;
+            padding-bottom: 5pt;
+            border-bottom: 2px solid #000;
+            text-align: center;
+        }
+
+        .comparison-item ul {
+            margin-left: 14pt;
+        }
+
+        .comparison-item li {
+            margin-bottom: 3pt;
+            font-size: 9pt;
+        }
+
+        .step-container {
+            display: flex;
+            gap: 6pt;
+            margin: 8pt 0;
+            align-items: stretch;
+        }
+
+        .step {
+            flex: 1;
+            border: 2px solid #000;
+            padding: 8pt;
+            text-align: center;
+            background: #fff;
+            break-inside: avoid;
+        }
+
+        .step-number {
+            background: #000;
+            color: #fff;
+            width: 24pt;
+            height: 24pt;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6pt auto;
+            font-weight: 700;
+            font-size: 11pt;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 9pt;
+            margin-bottom: 4pt;
+        }
+
+        .step-content {
+            font-size: 8pt;
+        }
+
+        .key-points {
+            border: 3px solid #000;
+            background: #f9f9f9;
+            padding: 10pt;
+            margin: 10pt 0;
+            break-inside: avoid;
+        }
+
+        .key-points-title {
+            font-weight: 700;
+            font-size: 12pt;
+            margin-bottom: 8pt;
+            text-transform: uppercase;
+        }
+
+        .key-points ul {
+            margin-left: 14pt;
+        }
+
+        .key-points li {
+            margin-bottom: 5pt;
+            font-size: 9.5pt;
+        }
+
+        footer {
+            margin-top: 16pt;
+            padding-top: 8pt;
+            border-top: 2px solid #000;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #666;
+        }
+
+        .mb-small { margin-bottom: 6pt; }
+        .mb-medium { margin-bottom: 10pt; }
+
+        code {
+            font-family: 'Courier New', monospace;
+            font-size: 8.5pt;
+            background: #f0f0f0;
+            padding: 1pt 3pt;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 18mm;
+            }
+
+            .card, .card-light, .info-box,
+            .code-card, .table-card,
+            .comparison-item, .key-points,
+            .definition-card, .step {
+                break-inside: avoid;
+            }
+
+            .section-title {
+                break-after: avoid;
+            }
+
+            a {
+                text-decoration: none;
+                color: #000;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Vibe Coding for Problem Solvers</h1>
+        <div class="subtitle">O'Reilly Live Training · Instructor: Lucas Soares</div>
+        <div class="meta">7 Core Skills · 12 Patterns · Tool Landscape · Security Guidelines · 2025</div>
+    </div>
+
+    <!-- Section 1: What is Vibe Coding? -->
+    <div class="section-title">What is Vibe Coding?</div>
+
+    <div class="grid-2">
+        <div class="definition-card">
+            <div class="term">Vibe Coding</div>
+            <div class="definition">
+                Building software with LLMs <strong>without reviewing generated code</strong>. Coined by Andrej Karpathy (Feb 2025).
+                "Fully giving in to the vibes, embracing exponentials, and forgetting that the code even exists."
+                <br><br>
+                <strong>Use for:</strong> prototypes, experiments, throwaway projects, learning, MVPs, hackathons
+            </div>
+        </div>
+        <div class="definition-card">
+            <div class="term">AI-Assisted Programming</div>
+            <div class="definition">
+                Using AI as a "typing assistant" <strong>with human code review and oversight</strong>.
+                Simon Willison's Golden Rule: <em>"You won't commit code you couldn't explain to someone else."</em>
+                <br><br>
+                <strong>Use for:</strong> production systems, security-critical apps, shared/maintained codebases
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card mb-medium">
+        <div class="table-card-header">Vibe Coding vs AI-Assisted Programming</div>
+        <table>
+            <thead>
+                <tr><th>Aspect</th><th>Vibe Coding</th><th>AI-Assisted Programming</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code Review</td><td>None — accept without inspection</td><td>Thorough human review required</td></tr>
+                <tr><td>Use Case</td><td>Prototypes, experiments, throwaway</td><td>Production, critical, maintained code</td></tr>
+                <tr><td>Speed</td><td>Maximum velocity</td><td>Balanced speed + quality</td></tr>
+                <tr><td>Risk</td><td>High (acceptable for low stakes)</td><td>Low (quality &amp; security critical)</td></tr>
+                <tr><td>Skill Focus</td><td>Prompt engineering, system design</td><td>Programming fundamentals + AI collab</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 2: The 7 Core Skills -->
+    <div class="section-title">The 7 Core Skills</div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-title">1. Prompting</div>
+            <div class="card-content">
+                Clear, specific instructions with examples.<br>
+                <strong>Formula:</strong> Context + Task + Examples + Constraints + Format<br><br>
+                <strong>6 Sub-Skills:</strong>
+                <ul>
+                    <li><strong>Clear &amp; Direct</strong> — specific, unambiguous requests (always)</li>
+                    <li><strong>Decomposition</strong> — break complex tasks into steps</li>
+                    <li><strong>Examples</strong> — show desired input/output pairs</li>
+                    <li><strong>Role Assignment</strong> — define AI expertise/persona</li>
+                    <li><strong>Time to Think</strong> — request chain-of-thought reasoning</li>
+                    <li><strong>Constraints</strong> — set tech stack, code size limits</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">2. Context Management</div>
+            <div class="card-content">
+                Strategic information loading.<br>
+                <strong>Formula:</strong> Right context + Right amount + Right time = Better outputs<br><br>
+                <strong>4 Strategies:</strong>
+                <ul>
+                    <li><strong>Write</strong> — save to CLAUDE.md / external memory (reuse across sessions)</li>
+                    <li><strong>Select</strong> — RAG, @-mentions, smart file selection (large codebases)</li>
+                    <li><strong>Compress</strong> — summaries, handoffs, sliding windows (long convos)</li>
+                    <li><strong>Isolate</strong> — split context across multiple agents</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">3. Capability Assignment</div>
+            <div class="card-content">
+                Know what to delegate vs. keep human.<br><br>
+                <strong>Delegate to AI:</strong>
+                <ul>
+                    <li>Boilerplate, scaffolding, docs, tests</li>
+                    <li>Standard pattern implementations</li>
+                    <li>Data transformation &amp; batch processing</li>
+                </ul>
+                <strong>Keep Human Control:</strong>
+                <ul>
+                    <li>Architecture decisions, system design</li>
+                    <li>Security-critical code, final QA</li>
+                    <li>Performance optimization</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">4. Vibe Checking</div>
+            <div class="card-content">
+                Lightweight verification without deep code review.<br><br>
+                <strong>60-Second Routine:</strong>
+                <ul>
+                    <li><strong>Run it</strong> (5s) — does it execute without error?</li>
+                    <li><strong>Check counts</strong> (10s) — right amount of output?</li>
+                    <li><strong>Spot check</strong> (15s) — first, last, random item look right?</li>
+                    <li><strong>Boundary test</strong> (30s) — edge cases work? (zero, null, empty)</li>
+                </ul>
+                If all pass — you're good for vibe coding purposes.
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">5. Strategic Cognitive Offloading</div>
+            <div class="card-content">
+                The <strong>70/30 Rule</strong> for AI collaboration:<br><br>
+                <strong>70% AI Responsibility:</strong>
+                <ul>
+                    <li>Routine implementation</li>
+                    <li>Pattern following, code generation</li>
+                    <li>Boilerplate &amp; documentation</li>
+                </ul>
+                <strong>30% Human Responsibility:</strong>
+                <ul>
+                    <li>Strategic decisions</li>
+                    <li>Quality control</li>
+                    <li>Creative problem-solving</li>
+                </ul>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">6. Personal Benchmarking</div>
+            <div class="card-content">
+                Build custom evaluation frameworks for your AI workflow.<br><br>
+                <strong>Track These Metrics:</strong>
+                <ul>
+                    <li><strong>Speed</strong> — development velocity improvements</li>
+                    <li><strong>Quality</strong> — bug rates, user satisfaction scores</li>
+                    <li><strong>Learning</strong> — skill development curve over time</li>
+                    <li><strong>ROI</strong> — cost vs. benefit analysis</li>
+                </ul>
+                Teams report 30–40% reduction in sprint completion times.
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2 mb-medium">
+        <div class="card">
+            <div class="card-title">7. Agentic Task Orchestration</div>
+            <div class="card-content">
+                Coordinating multiple AI agents for complex projects.<br><br>
+                <strong>Workflow Steps:</strong>
+                <ul>
+                    <li><strong>Task decomposition</strong> — break into agent-specific work</li>
+                    <li><strong>Workflow management</strong> — sequence + parallel processing</li>
+                    <li><strong>Quality gates</strong> — checkpoints between agent handoffs</li>
+                    <li><strong>Integration testing</strong> — ensure agent outputs work together</li>
+                </ul>
+            </div>
+        </div>
+        <div class="info-box" style="margin:0; align-self:start;">
+            <div class="info-box-title">Iterative Refinement Cycle</div>
+            <p style="font-size:9pt; margin-bottom:6pt;">
+                <strong>1.</strong> Conceptualize (natural language) →
+                <strong>2.</strong> AI Generate →
+                <strong>3.</strong> Functional Test →
+                <strong>4.</strong> Feedback &amp; Refine →
+                <strong>5.</strong> Iterate
+            </p>
+            <p style="font-size:9pt"><strong>Before Prompting, Ask:</strong><br>
+            Is it specific enough? &nbsp;·&nbsp; Should I decompose? &nbsp;·&nbsp; Would an example help? &nbsp;·&nbsp; Need specialized expertise? &nbsp;·&nbsp; Ask for reasoning? &nbsp;·&nbsp; Set constraints?</p>
+        </div>
+    </div>
+
+    <!-- Section 3: Vibe Checking Techniques -->
+    <div class="section-title">Vibe Checking — 8 Verification Techniques</div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-title">1. Spot Check</div>
+            <div class="card-content">Check first, last, and a random middle item. Best for: data transformations, batch processing.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">2. Count Validation</div>
+            <div class="card-content">Verify input/output quantities match — or filter logic is correct.
+            <code>assert len(input) == len(output)</code>. Best for: parsing, filtering.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">3. Boundary Test</div>
+            <div class="card-content">Test zero, negative, large numbers, empty input, None/null. Best for: functions, validators, calculators.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">4. Smoke Test</div>
+            <div class="card-content"><code>python script.py &amp;&amp; echo "SUCCESS"</code><br>Does it run at all? Best for: any generated code — always your first check.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">5. Format Validation</div>
+            <div class="card-content">Check structure with <code>json.loads()</code> or jsonschema validate(). Best for: data transforms, API responses.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">6. Diff Check</div>
+            <div class="card-content"><code>git diff --stat</code> — compare before/after. <code>diff original.txt refactored.txt</code>. Best for: refactoring, migrations.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">7. Console Log Test</div>
+            <div class="card-content">Add strategic <code>print()</code> statements to trace execution flow at key points. Best for: debugging, understanding new code.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">8. Type Check</div>
+            <div class="card-content"><code>print(type(result))</code> — verify types are what you expect. Run <code>mypy script.py</code>. Best for: type-sensitive operations.</div>
+        </div>
+    </div>
+
+    <!-- Context Decision Tree -->
+    <div class="section-title">Context Management Decision Tree</div>
+
+    <div class="step-container">
+        <div class="step">
+            <div class="step-number">1</div>
+            <div class="step-title">Reusable across sessions?</div>
+            <div class="step-content">→ Write to CLAUDE.md or external docs</div>
+        </div>
+        <div class="step">
+            <div class="step-number">2</div>
+            <div class="step-title">Codebase too large to load?</div>
+            <div class="step-content">→ Select: @-mentions, RAG, file selection</div>
+        </div>
+        <div class="step">
+            <div class="step-number">3</div>
+            <div class="step-title">Conversation too long?</div>
+            <div class="step-content">→ Compress: summarize, handoff to new session</div>
+        </div>
+        <div class="step">
+            <div class="step-number">4</div>
+            <div class="step-title">Multiple specialists needed?</div>
+            <div class="step-content">→ Isolate: split context across agents</div>
+        </div>
+    </div>
+
+    <!-- Section 4: 12 Practical Patterns -->
+    <div class="section-title">12 Practical Patterns</div>
+
+    <div class="grid-3">
+        <div class="card">
+            <div class="card-title">1. Start with Prototypes</div>
+            <div class="card-content">Fuzzy idea → working prototype → iterate. Beats analysis paralysis. When: new features, unclear requirements.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">2. Vibe Checking Checklist</div>
+            <div class="card-content">Green/red flag review before accepting. Run the 60-second routine on every AI-generated piece.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">3. Provide Clear Specs</div>
+            <div class="card-content">Detailed requirements before generation. Specificity directly correlates with output quality.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">4. Restart When Stuck</div>
+            <div class="card-content">Strategic context reset. Long sessions cause quality degradation — fresh context often wins.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">5. Let It See</div>
+            <div class="card-content">Share screenshots, error messages, logs. Bridges context gaps especially for UI and debugging.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">6. Automate Steps</div>
+            <div class="card-content">UV scripts for repeatable tasks. Scripts for: resize images, process CSV, parse meetings, scrape headlines.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">7. Personal Benchmarks</div>
+            <div class="card-content">Build your own eval criteria. Track velocity, quality, learning curves to prove ROI.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">8. Store Format Prompts</div>
+            <div class="card-content">Save effective prompts for reuse. Build a personal library of high-performing prompt templates.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">9. Generate Synthetic Data</div>
+            <div class="card-content">Create test datasets with AI. Faster than manual data creation; great for edge case testing.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">10. Voice Workflows</div>
+            <div class="card-content">Dictate requirements, review output verbally. Faster for ideation and requirement capture.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">11. Context-Based Coding</div>
+            <div class="card-content">Load full codebase via gitingest, repomix, or r.jina.ai before tackling complex tasks.</div>
+        </div>
+        <div class="card">
+            <div class="card-title">12. Raw → Structured</div>
+            <div class="card-content">Transform notes/logs/natural language into structured data. Meeting notes → action items JSON.</div>
+        </div>
+    </div>
+
+    <!-- Section 5: Tool Landscape -->
+    <div class="section-title">Tool Landscape (2025)</div>
+
+    <div class="table-card mb-medium">
+        <div class="table-card-header">AI Coding Tools — Categories &amp; Best Uses</div>
+        <table>
+            <thead>
+                <tr><th>Tool</th><th>Category</th><th>Best For</th><th>Price</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Cursor</strong></td><td>IDE Integration</td><td>Best overall; multi-file tasks, refactoring, serious projects</td><td>£16/mo</td></tr>
+                <tr><td><strong>GitHub Copilot</strong></td><td>IDE Integration</td><td>Traditional devs; fast autocomplete in existing IDE</td><td>£10/mo</td></tr>
+                <tr><td><strong>Windsurf</strong></td><td>IDE Integration</td><td>Spec-driven dev, teams wanting structured process</td><td>£15/mo</td></tr>
+                <tr><td><strong>Claude Code</strong></td><td>Terminal Agent</td><td>Complex agent workflows, MCP integration, full-stack</td><td>—</td></tr>
+                <tr><td><strong>Aider</strong></td><td>Terminal Agent</td><td>Git-aware terminal coding, open source</td><td>Free</td></tr>
+                <tr><td><strong>Replit</strong></td><td>Cloud / No-Code</td><td>Beginners, collaboration (75% of users never write code)</td><td>Free / £20</td></tr>
+                <tr><td><strong>Lovable</strong></td><td>Cloud / No-Code</td><td>Non-technical founders; full-stack apps from conversation</td><td>£25/mo</td></tr>
+                <tr><td><strong>Bolt.new</strong></td><td>Cloud / No-Code</td><td>Rapid prototypes, hackathons, instant preview</td><td>Free–£100</td></tr>
+                <tr><td><strong>Claude Artifacts</strong></td><td>Web Builder</td><td>Quick one-shot prototypes directly in browser chat</td><td>—</td></tr>
+                <tr><td><strong>Vercel v0</strong></td><td>Web Builder</td><td>UI/React component generation, design-to-code</td><td>Free tier</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Section 6: When to Use vs Avoid -->
+    <div class="section-title">When to Vibe Code vs. Avoid</div>
+
+    <div class="comparison-grid">
+        <div class="comparison-item">
+            <div class="comparison-header">✅ SAFE — Vibe Code Here</div>
+            <ul>
+                <li>Throwaway weekend projects</li>
+                <li>Prototypes &amp; proof-of-concepts</li>
+                <li>Low-stakes experiments</li>
+                <li>Personal scripts &amp; automation tools</li>
+                <li>Learning new frameworks/libraries</li>
+                <li>MVP development &amp; hackathons</li>
+                <li>Internal tools (low stakes)</li>
+                <li>Generating test data &amp; mock APIs</li>
+            </ul>
+        </div>
+        <div class="comparison-item">
+            <div class="comparison-header">❌ AVOID — Use AI-Assisted Instead</div>
+            <ul>
+                <li>Production user-facing systems</li>
+                <li>Security-critical code (auth, payments)</li>
+                <li>Regulated industries (healthcare, finance)</li>
+                <li>Long-term maintained codebases</li>
+                <li>Shared team codebases</li>
+                <li>High-scale / real-time systems</li>
+                <li>Code with legal/compliance obligations</li>
+                <li>When downtime has significant business impact</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="info-box mb-medium">
+        <div class="info-box-title">Risk Assessment — Before Choosing Vibe Coding, Ask:</div>
+        <p style="font-size:9pt">
+            <strong>1. Impact of failure</strong> — what happens if the code breaks? &nbsp;·&nbsp;
+            <strong>2. Data sensitivity</strong> — personal or financial information? &nbsp;·&nbsp;
+            <strong>3. Maintenance</strong> — long-term updates needed? &nbsp;·&nbsp;
+            <strong>4. Team</strong> — do others need to understand/modify it? &nbsp;·&nbsp;
+            <strong>5. Compliance</strong> — regulatory obligations?
+            &nbsp;&nbsp;&nbsp;<strong>High Risk = Avoid Vibe Coding</strong>
+        </p>
+    </div>
+
+    <!-- Section 7: Security Pitfalls -->
+    <div class="section-title">Security Pitfalls in AI-Generated Code</div>
+
+    <div class="grid-2">
+        <div class="code-card">
+            <div class="code-card-header">SQL Injection — 40% of AI queries vulnerable</div>
+            <pre><code># VULNERABLE — never do this
+query = "SELECT * FROM users WHERE id = " + user_id
+
+# SECURE — use parameterized queries
+query = "SELECT * FROM users WHERE id = ?"
+cursor.execute(query, [user_id])</code></pre>
+        </div>
+        <div class="code-card">
+            <div class="code-card-header">Hardcoded Credentials</div>
+            <pre><code># VULNERABLE — never hardcode secrets
+api_key = "sk-your-key-here"
+
+# SECURE — use environment variables
+import os
+api_key = os.environ.get('API_KEY')</code></pre>
+        </div>
+        <div class="code-card">
+            <div class="code-card-header">XSS — Cross-Site Scripting</div>
+            <pre><code>// VULNERABLE — renders raw HTML
+element.innerHTML = user_input;
+
+// SECURE — renders as text only
+element.textContent = user_input;</code></pre>
+        </div>
+        <div class="card">
+            <div class="card-title">Security Best Practices</div>
+            <div class="card-content">
+                <ul>
+                    <li><strong>OWASP LLM Top 10:</strong> Prompt Injection, Sensitive Data Disclosure</li>
+                    <li>Automated scanning: SonarQube, Snyk, CodeQL in CI/CD</li>
+                    <li>Never accept AI-generated auth/payment code without review</li>
+                    <li>Security-first prompting — specify OWASP, bcrypt, rate limiting, HTTPS</li>
+                    <li>Dependency vulnerability scanning on every build</li>
+                    <li>Regular penetration testing for production systems</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Engineering Tools -->
+    <div class="section-title">Context Engineering Tools</div>
+
+    <div class="grid-3">
+        <div class="definition-card">
+            <div class="term">gitingest.com</div>
+            <div class="definition">Convert GitHub repos into LLM-ready text context. Paste the repo URL to get a digest.</div>
+        </div>
+        <div class="definition-card">
+            <div class="term">repomix</div>
+            <div class="definition">Package a local repository into a single AI-readable file. Great for large codebases.</div>
+        </div>
+        <div class="definition-card">
+            <div class="term">r.jina.ai</div>
+            <div class="definition">Extract clean web content for AI context. Prefix any URL: <code>r.jina.ai/https://...</code></div>
+        </div>
+    </div>
+
+    <!-- Key Takeaways -->
+    <div class="key-points">
+        <div class="key-points-title">Key Takeaways</div>
+        <ul>
+            <li><strong>Know your mode:</strong> Vibe coding ≠ all AI coding. Decide consciously which approach fits your risk profile.</li>
+            <li><strong>Prompt quality is everything:</strong> Context + Task + Examples + Constraints + Format = dramatically better outputs.</li>
+            <li><strong>Verify smartly, not exhaustively:</strong> 60-second check — run it, count outputs, spot check, boundary test.</li>
+            <li><strong>70/30 rule:</strong> AI handles 70% (routine code), you handle 30% (strategy, quality, creative decisions).</li>
+            <li><strong>Context is fuel:</strong> Load the right context at the right time in the right amount — avoid overloading.</li>
+            <li><strong>Security stays human:</strong> Never accept AI-generated auth, payment, or security-critical code without review.</li>
+            <li><strong>Restart beats debugging:</strong> When sessions degrade in quality, a fresh context window often solves it faster.</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2025 Automata Learning Lab &nbsp;·&nbsp; Vibe Coding for Problem Solvers &nbsp;·&nbsp; O'Reilly Live Training &nbsp;·&nbsp; Instructor: Lucas Soares</p>
+    </footer>
+
+</body>
+</html>
