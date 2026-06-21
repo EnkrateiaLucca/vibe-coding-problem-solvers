@@ -297,11 +297,14 @@
         <h1>📚 Quiz App</h1>
 
         <div class="upload-section" id="uploadSection">
-            <input type="file" id="fileInput" accept=".json">
+            <input type="file" id="fileInput" accept=".json,.md">
             <label for="fileInput" class="upload-label">
                 📁 Choose Quiz File
             </label>
-            <p style="margin-top: 20px; color: #666;">Select a JSON file to start your quiz</p>
+            <p style="margin-top: 20px; color: #666;">Select a JSON or Markdown file to start your quiz</p>
+            <p style="margin-top: 10px; color: #999; font-size: 0.85em;">
+                Markdown format: use <code>##</code> for questions, <code>*</code> for the correct answer, <code>-</code> for wrong answers
+            </p>
         </div>
 
         <div class="quiz-container" id="quizContainer">
@@ -351,6 +354,39 @@
         nextBtn.addEventListener('click', nextQuestion);
         restartBtn.addEventListener('click', restart);
 
+        function parseMarkdownQuiz(text) {
+            const questions = [];
+            // Split on ## headings (question markers)
+            const blocks = text.split(/^##\s+/m).filter(b => b.trim());
+
+            for (const block of blocks) {
+                const lines = block.split('\n').filter(l => l.trim());
+                if (lines.length < 2) continue;
+
+                const question = lines[0].trim();
+                const alternatives = [];
+                let correctAnswer = -1;
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    // * prefix = correct answer
+                    if (line.match(/^\*\s+/)) {
+                        correctAnswer = alternatives.length;
+                        alternatives.push(line.replace(/^\*\s+/, ''));
+                    // - prefix = wrong answer
+                    } else if (line.match(/^-\s+/)) {
+                        alternatives.push(line.replace(/^-\s+/, ''));
+                    }
+                }
+
+                if (alternatives.length >= 2 && correctAnswer !== -1) {
+                    questions.push({ question, alternatives, correct_answer: correctAnswer });
+                }
+            }
+
+            return questions;
+        }
+
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -359,34 +395,39 @@
             reader.onload = (e) => {
                 try {
                     let content = e.target.result;
-                    let data;
+                    const isMarkdown = file.name.toLowerCase().endsWith('.md');
 
-                    // Try to parse the content
-                    try {
-                        data = JSON.parse(content);
-                    } catch {
-                        // If that fails, it might be double-encoded JSON string
-                        // Try parsing it as a string first, then parse again
-                        const stringContent = JSON.parse(content);
-                        data = JSON.parse(stringContent);
-                    }
-
-                    // Handle both formats: {questions: [...]} or direct array
-                    if (Array.isArray(data)) {
-                        quizData = data;
-                    } else if (data.questions && Array.isArray(data.questions)) {
-                        quizData = data.questions;
+                    if (isMarkdown) {
+                        quizData = parseMarkdownQuiz(content);
                     } else {
-                        throw new Error('Invalid quiz format');
+                        let data;
+                        try {
+                            data = JSON.parse(content);
+                        } catch {
+                            const stringContent = JSON.parse(content);
+                            data = JSON.parse(stringContent);
+                        }
+
+                        if (Array.isArray(data)) {
+                            quizData = data;
+                        } else if (data.questions && Array.isArray(data.questions)) {
+                            quizData = data.questions;
+                        } else {
+                            throw new Error('Invalid quiz format');
+                        }
                     }
 
-                    if (quizData.length === 0) {
-                        throw new Error('No questions found in quiz file');
+                    if (!quizData || quizData.length === 0) {
+                        throw new Error('No questions found in file');
                     }
 
                     startQuiz();
                 } catch (error) {
-                    alert('Error parsing JSON file. Please check the file format.\n\nExpected format:\n{\n  "questions": [\n    {\n      "question": "...",\n      "alternatives": [...],\n      "correct_answer": 0\n    }\n  ]\n}');
+                    alert(
+                        'Error parsing file. Please check the format.\n\n' +
+                        'JSON format:\n{ "questions": [{ "question": "...", "alternatives": [...], "correct_answer": 0 }] }\n\n' +
+                        'Markdown format:\n## Question text\n* Correct answer\n- Wrong answer\n- Wrong answer'
+                    );
                     console.error('Parse error:', error);
                 }
             };

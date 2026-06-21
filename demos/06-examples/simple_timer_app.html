@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F3EB;
+      --card: #ffffff;
+      --text: #2A2825;
+      --muted: #5C5750;
+      --border: #000000;
+      --border-light: #DDD9D2;
+      --coral: #E86B5A;
+      --golden: #F5C542;
+      --sage: #7CB56B;
+      --sky: #5B9BD5;
+      --coral-light: #FBEAE7;
+      --golden-light: #FEF8E6;
+      --sage-light: #EEF5EC;
+      --sky-light: #E8F1F9;
+      --gray-100: #F5F4F1;
+      --gray-300: #DDD9D2;
+      --gray-500: #8A847A;
+      --gray-600: #5C5750;
+      --gray-800: #2A2825;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'IBM Plex Sans', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 40px 24px;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-bar {
+      display: flex;
+      gap: 0;
+      height: 4px;
+      margin-bottom: 24px;
+      margin-top: 16px;
+    }
+    .brand-bar span {
+      flex: 1;
+    }
+
+    .controls,
+    .timer {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 0;
+      padding: 16px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    input, button {
+      font-family: 'IBM Plex Sans', Arial, sans-serif;
+      font-size: 14px;
+      padding: 10px 12px;
+      border-radius: 0;
+      border: 2px solid var(--border);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--sky);
+      box-shadow: 0 0 0 3px var(--sky-light);
+    }
+
+    button {
+      cursor: pointer;
+      background: white;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: transform 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.primary {
+      background: var(--text);
+      color: white;
+      border-color: var(--text);
+    }
+
+    button.accent {
+      background: var(--coral);
+      color: white;
+      border-color: var(--coral);
+    }
+
+    button.danger {
+      color: var(--coral);
+      background: var(--coral-light);
+      border-color: var(--coral);
+    }
+
+    .timers {
+      display: grid;
+      gap: 8px;
+    }
+
+    .timer {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr auto auto auto;
+      gap: 8px;
+      align-items: center;
+      transition: transform 0.15s ease;
+    }
+
+    .timer:hover {
+      transform: translateY(-2px);
+    }
+
+    .timer.done {
+      border-left: 4px solid var(--sage);
+      background: var(--sage-light);
+    }
+
+    .label {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .time {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+      font-size: 22px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .hint {
+      color: var(--muted);
+      margin: 0 0 18px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .timer {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .time {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Multi Timer</h1>
+    <div class="hint">Create multiple countdown timers and run them in parallel.</div>
+    <div class="brand-bar">
+      <span style="background:#E86B5A"></span>
+      <span style="background:#F5C542"></span>
+      <span style="background:#7CB56B"></span>
+      <span style="background:#5B9BD5"></span>
+    </div>
+
+    <div class="controls">
+      <input id="labelInput" type="text" placeholder="Timer label (e.g. Tea)" />
+      <input id="secondsInput" type="number" min="1" value="60" placeholder="Seconds" />
+      <button id="addBtn" class="primary">Add Timer</button>
+    </div>
+
+    <div id="timers" class="timers"></div>
+  </div>
+
+  <script>
+    const timersEl = document.getElementById('timers');
+    const labelInput = document.getElementById('labelInput');
+    const secondsInput = document.getElementById('secondsInput');
+    const addBtn = document.getElementById('addBtn');
+
+    const timers = [];
+
+    function formatTime(totalSeconds) {
+      const mins = Math.floor(totalSeconds / 60);
+      const secs = totalSeconds % 60;
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function beep() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    }
+
+    function render() {
+      timersEl.innerHTML = '';
+
+      timers.forEach(timer => {
+        const card = document.createElement('div');
+        card.className = timer.done ? 'timer done' : 'timer';
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = timer.label;
+
+        const time = document.createElement('div');
+        time.className = 'time';
+        time.textContent = formatTime(timer.remaining);
+
+        const startPauseBtn = document.createElement('button');
+        startPauseBtn.textContent = timer.running ? 'Pause' : 'Start';
+        startPauseBtn.onclick = () => {
+          timer.running = !timer.running;
+          render();
+        };
+
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Reset';
+        resetBtn.onclick = () => {
+          timer.remaining = timer.initial;
+          timer.running = false;
+          timer.done = false;
+          render();
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'danger';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          const index = timers.findIndex(t => t.id === timer.id);
+          if (index >= 0) timers.splice(index, 1);
+          render();
+        };
+
+        if (timer.done) {
+          label.textContent = `${timer.label} ✅`;
+        }
+
+        card.append(label, time, startPauseBtn, resetBtn, deleteBtn);
+        timersEl.appendChild(card);
+      });
+    }
+
+    function addTimer() {
+      const label = labelInput.value.trim() || `Timer ${timers.length + 1}`;
+      const seconds = parseInt(secondsInput.value, 10);
+
+      if (!Number.isFinite(seconds) || seconds <= 0) {
+        alert('Please enter a valid number of seconds.');
+        return;
+      }
+
+      timers.push({
+        id: crypto.randomUUID(),
+        label,
+        initial: seconds,
+        remaining: seconds,
+        running: false,
+        done: false,
+      });
+
+      labelInput.value = '';
+      render();
+    }
+
+    addBtn.addEventListener('click', addTimer);
+    labelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTimer();
+    });
+    secondsInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addTimer();
+    });
+
+    setInterval(() => {
+      let changed = false;
+
+      timers.forEach(timer => {
+        if (!timer.running || timer.remaining <= 0) return;
+        timer.remaining -= 1;
+        changed = true;
+
+        if (timer.remaining <= 0) {
+          timer.remaining = 0;
+          timer.running = false;
+          timer.done = true;
+          beep();
+        }
+      });
+
+      if (changed) render();
+    }, 1000);
+
+    render();
+  </script>
+</body>
+</html>

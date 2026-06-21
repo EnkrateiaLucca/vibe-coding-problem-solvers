@@ -1,0 +1,457 @@
+<!-- Build a simple timer app that takes in a label and a time duration in minutes.
+
+It should allow for multiple timers to be created at once with different labels
+It should have a black and whilte simple styling
+it should have a minimal few buttons design
+It should be applied for productivity purposes.
+
+The output should be a single html app I can directly open in the browser. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Timer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      background: #fff;
+      color: #000;
+      min-height: 100vh;
+      padding: 40px 24px;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 13px;
+      font-weight: normal;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      color: #000;
+      border-bottom: 1px solid #000;
+      padding-bottom: 12px;
+    }
+
+    /* --- Add Timer Form --- */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 40px;
+      align-items: stretch;
+    }
+
+    .add-form input {
+      font-family: inherit;
+      font-size: 14px;
+      border: 1px solid #000;
+      padding: 10px 12px;
+      background: #fff;
+      color: #000;
+      outline: none;
+    }
+
+    .add-form input:focus {
+      background: #f0f0f0;
+    }
+
+    #input-label { flex: 1 1 auto; }
+    #input-minutes { width: 72px; flex-shrink: 0; }
+
+    .add-form button {
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: #000;
+      color: #fff;
+      border: 1px solid #000;
+      padding: 10px 16px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .add-form button:hover { background: #333; }
+
+    /* --- Timer Cards --- */
+    #timers-list { display: flex; flex-direction: column; gap: 0; }
+
+    .timer-card {
+      border: 1px solid #000;
+      border-bottom: none;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: background 0.1s;
+    }
+
+    .timer-card:last-child { border-bottom: 1px solid #000; }
+
+    .timer-card.running { background: #000; color: #fff; }
+    .timer-card.done    { background: #e8e8e8; }
+
+    .timer-label {
+      flex: 1 1 auto;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .timer-display {
+      font-size: 22px;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      min-width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .timer-done-text {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      min-width: 70px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid currentColor;
+      padding: 6px 10px;
+      cursor: pointer;
+      background: transparent;
+      color: inherit;
+    }
+
+    .btn:hover { opacity: 0.6; }
+
+    .timer-card.running .btn { color: #fff; border-color: #fff; }
+    .timer-card.done    .btn { color: #000; border-color: #000; }
+
+    /* progress bar */
+    .progress-bar-wrap {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.2);
+    }
+    .timer-card { position: relative; }
+    .progress-bar {
+      height: 2px;
+      background: #fff;
+      transition: width 1s linear;
+    }
+    .timer-card:not(.running) .progress-bar-wrap { display: none; }
+
+    /* empty state */
+    #empty-state {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #aaa;
+      padding: 20px 0;
+    }
+
+    /* notification badge */
+    .done-badge {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      padding: 3px 7px;
+      border: 1px solid #000;
+      text-transform: uppercase;
+      background: #000;
+      color: #fff;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Focus Timer</h1>
+
+  <div class="add-form">
+    <input id="input-label"   type="text"   placeholder="Label" maxlength="40" autocomplete="off" />
+    <input id="input-minutes" type="number" placeholder="min"   min="1" max="999" />
+    <button onclick="addTimer()">Add</button>
+  </div>
+
+  <div id="timers-list">
+    <div id="empty-state">No timers yet.</div>
+  </div>
+
+<script>
+  let timers = [];
+  let nextId = 1;
+
+  // Try to restore from sessionStorage so a page refresh doesn't wipe state
+  try {
+    const saved = sessionStorage.getItem('focus-timers');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      timers = parsed.timers || [];
+      nextId = parsed.nextId || 1;
+      // Recalculate remaining based on elapsed wall time
+      const now = Date.now();
+      timers.forEach(t => {
+        if (t.running && t.pausedAt == null) {
+          const elapsed = now - t.lastStartedAt;
+          t.remaining = Math.max(0, t.remaining - Math.floor(elapsed / 1000));
+          t.lastStartedAt = now;
+          if (t.remaining === 0) { t.running = false; t.done = true; }
+        }
+      });
+    }
+  } catch(e) {}
+
+  // Re-attach intervals after restore
+  timers.forEach(t => {
+    if (t.running) startInterval(t);
+  });
+
+  renderAll();
+
+  /* ---- Add ---- */
+  function addTimer() {
+    const label   = document.getElementById('input-label').value.trim() || 'Task';
+    const minutes = parseInt(document.getElementById('input-minutes').value, 10);
+    if (!minutes || minutes < 1) {
+      document.getElementById('input-minutes').focus();
+      return;
+    }
+    const t = {
+      id: nextId++,
+      label,
+      total: minutes * 60,
+      remaining: minutes * 60,
+      running: false,
+      done: false,
+      pausedAt: null,
+      lastStartedAt: null,
+      intervalId: null
+    };
+    timers.push(t);
+    document.getElementById('input-label').value   = '';
+    document.getElementById('input-minutes').value = '';
+    document.getElementById('input-label').focus();
+    renderAll();
+    save();
+  }
+
+  /* ---- Controls ---- */
+  function toggleTimer(id) {
+    const t = timers.find(x => x.id === id);
+    if (!t || t.done) return;
+    if (t.running) {
+      clearInterval(t.intervalId);
+      t.intervalId = null;
+      t.running = false;
+      t.pausedAt = Date.now();
+    } else {
+      t.running = true;
+      t.lastStartedAt = Date.now();
+      t.pausedAt = null;
+      startInterval(t);
+    }
+    renderAll();
+    save();
+  }
+
+  function resetTimer(id) {
+    const t = timers.find(x => x.id === id);
+    if (!t) return;
+    clearInterval(t.intervalId);
+    t.intervalId = null;
+    t.running = false;
+    t.done = false;
+    t.remaining = t.total;
+    t.pausedAt = null;
+    t.lastStartedAt = null;
+    renderAll();
+    save();
+  }
+
+  function removeTimer(id) {
+    const t = timers.find(x => x.id === id);
+    if (t) clearInterval(t.intervalId);
+    timers = timers.filter(x => x.id !== id);
+    renderAll();
+    save();
+  }
+
+  function startInterval(t) {
+    t.intervalId = setInterval(() => {
+      if (t.remaining > 0) {
+        t.remaining--;
+        updateCard(t);
+        save();
+      }
+      if (t.remaining <= 0) {
+        clearInterval(t.intervalId);
+        t.intervalId = null;
+        t.running = false;
+        t.done = true;
+        renderAll();
+        notifyDone(t.label);
+        save();
+      }
+    }, 1000);
+  }
+
+  /* ---- Render ---- */
+  function renderAll() {
+    const list = document.getElementById('timers-list');
+    const empty = document.getElementById('empty-state');
+
+    // Remove all cards (not the empty state placeholder)
+    list.querySelectorAll('.timer-card').forEach(el => el.remove());
+
+    if (timers.length === 0) {
+      if (empty) empty.style.display = '';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    timers.forEach(t => {
+      const card = buildCard(t);
+      list.appendChild(card);
+    });
+  }
+
+  function buildCard(t) {
+    const card = document.createElement('div');
+    card.className = 'timer-card' + (t.running ? ' running' : '') + (t.done ? ' done' : '');
+    card.id = 'card-' + t.id;
+
+    const label = document.createElement('div');
+    label.className = 'timer-label';
+    label.textContent = t.label;
+
+    const display = document.createElement('div');
+    if (t.done) {
+      display.className = 'timer-done-text';
+      display.textContent = 'Done';
+    } else {
+      display.className = 'timer-display';
+      display.id = 'display-' + t.id;
+      display.textContent = formatTime(t.remaining);
+    }
+
+    const controls = document.createElement('div');
+    controls.className = 'timer-controls';
+
+    if (!t.done) {
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'btn';
+      toggleBtn.textContent = t.running ? 'Pause' : 'Start';
+      toggleBtn.onclick = () => toggleTimer(t.id);
+      controls.appendChild(toggleBtn);
+    }
+
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn';
+    resetBtn.textContent = 'Reset';
+    resetBtn.onclick = () => resetTimer(t.id);
+    controls.appendChild(resetBtn);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn';
+    removeBtn.textContent = '✕';
+    removeBtn.onclick = () => removeTimer(t.id);
+    controls.appendChild(removeBtn);
+
+    card.appendChild(label);
+    card.appendChild(display);
+    card.appendChild(controls);
+
+    if (t.running) {
+      const barWrap = document.createElement('div');
+      barWrap.className = 'progress-bar-wrap';
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      bar.id = 'bar-' + t.id;
+      const pct = t.total > 0 ? (t.remaining / t.total) * 100 : 0;
+      bar.style.width = pct + '%';
+      barWrap.appendChild(bar);
+      card.appendChild(barWrap);
+    }
+
+    return card;
+  }
+
+  function updateCard(t) {
+    const display = document.getElementById('display-' + t.id);
+    if (display) display.textContent = formatTime(t.remaining);
+    const bar = document.getElementById('bar-' + t.id);
+    if (bar && t.total > 0) bar.style.width = ((t.remaining / t.total) * 100) + '%';
+  }
+
+  /* ---- Helpers ---- */
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function notifyDone(label) {
+    // Browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('Timer done', { body: label + ' is complete.' });
+    }
+    // Audio beep via Web Audio API
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.3, 0.6].forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.3);
+      });
+    } catch(e) {}
+  }
+
+  function save() {
+    try {
+      // Don't serialise intervalId
+      const data = timers.map(({ intervalId, ...rest }) => rest);
+      sessionStorage.setItem('focus-timers', JSON.stringify({ timers: data, nextId }));
+    } catch(e) {}
+  }
+
+  /* ---- Keyboard shortcut: Enter to add ---- */
+  document.getElementById('input-minutes').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTimer();
+  });
+  document.getElementById('input-label').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('input-minutes').focus();
+  });
+
+  /* ---- Request notification permission ---- */
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+</script>
+</body>
+</html>

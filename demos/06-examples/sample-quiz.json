@@ -1,0 +1,84 @@
+{
+  "questions": [
+    {
+      "question": "What does HTML stand for?",
+      "alternatives": [
+        "Hyper Text Markup Language",
+        "Home Tool Markup Language",
+        "Hyperlinks and Text Markup Language",
+        "Hyper Technical Modern Language"
+      ],
+      "correct_answer": 0
+    },
+    {
+      "question": "Which CSS property is used to change the text color of an element?",
+      "alternatives": [
+        "font-color",
+        "text-color",
+        "color",
+        "foreground-color"
+      ],
+      "correct_answer": 2
+    },
+    {
+      "question": "What does 'CSS' stand for?",
+      "alternatives": [
+        "Computer Style Sheets",
+        "Cascading Style Sheets",
+        "Creative Style System",
+        "Colorful Style Sheets"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question": "Which HTML element is used to define an unordered list?",
+      "alternatives": [
+        "<ol>",
+        "<list>",
+        "<ul>",
+        "<li>"
+      ],
+      "correct_answer": 2
+    },
+    {
+      "question": "What is the correct JavaScript syntax to change the content of an HTML element with id='demo'?",
+      "alternatives": [
+        "document.getElement('demo').innerHTML = 'Hello'",
+        "document.getElementById('demo').innerHTML = 'Hello'",
+        "#demo.innerHTML = 'Hello'",
+        "document.querySelector('demo').innerHTML = 'Hello'"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question": "Which CSS property controls the space between an element's border and its content?",
+      "alternatives": [
+        "margin",
+        "spacing",
+        "border-gap",
+        "padding"
+      ],
+      "correct_answer": 3
+    },
+    {
+      "question": "What does the 'box-sizing: border-box' CSS declaration do?",
+      "alternatives": [
+        "Adds a visible box around the element",
+        "Makes width and height include padding and border",
+        "Creates a shadow around the element",
+        "Sets the element's display to block"
+      ],
+      "correct_answer": 1
+    },
+    {
+      "question": "Which JavaScript method is used to listen for user events like clicks?",
+      "alternatives": [
+        "element.onEvent()",
+        "element.listenTo()",
+        "element.addEventListener()",
+        "element.attachClick()"
+      ],
+      "correct_answer": 2
+    }
+  ]
+}
