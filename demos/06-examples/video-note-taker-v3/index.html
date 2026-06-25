@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Video Note Taker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0f13;
+    --panel: #16181f;
+    --panel-2: #1d2029;
+    --border: #2a2e3a;
+    --border-soft: #21242e;
+    --text: #eceef4;
+    --muted: #9aa2b2;
+    --faint: #6b7280;
+    --accent: #6d8bff;
+    --accent-hi: #8aa0ff;
+    --accent-dim: rgba(109, 139, 255, 0.15);
+    --danger: #ff5d73;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; height: 100%; }
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(109, 139, 255, 0.08), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .brand .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 14px var(--accent);
+  }
+  .brand small {
+    color: var(--muted);
+    font-weight: 450;
+    font-size: 12.5px;
+  }
+
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 15px;
+    border-radius: var(--radius-sm);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 550;
+    font-size: 13.5px;
+    transition: background .15s, border-color .15s, transform .05s, opacity .15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #252a36; border-color: #353c4b; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.accent {
+    background: var(--accent);
+    border-color: transparent;
+    color: #0b0d12;
+    font-weight: 650;
+  }
+  .btn.accent:hover { background: var(--accent-hi); }
+  .btn.ghost { background: transparent; }
+  .btn.ghost:hover { background: var(--panel-2); }
+
+  kbd {
+    font: 600 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 3px 5px;
+    color: var(--muted);
+  }
+
+  /* ---------- Layout ---------- */
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.9fr);
+    gap: 22px;
+    padding: 22px 24px 40px;
+    max-width: 1500px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  .col-left { display: flex; flex-direction: column; gap: 0; }
+
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- Drop / picker ---------- */
+  .dropzone {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    margin: 0;
+    transition: border-color .15s, background .15s;
+    cursor: pointer;
+  }
+  .dropzone:hover, .dropzone.drag {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--text);
+  }
+  .dropzone .big {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .dropzone svg { width: 46px; height: 46px; stroke: var(--accent); }
+
+  video {
+    display: block;
+    width: 100%;
+    background: #000;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+  }
+
+  .video-error {
+    padding: 14px 16px;
+    background: rgba(255, 93, 115, 0.12);
+    color: #ffb3bd;
+    font-size: 13px;
+    border-top: 1px solid rgba(255, 93, 115, 0.3);
+  }
+
+  /* ---------- Timeline ---------- */
+  .controls {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 14px 16px 16px;
+    margin-top: -1px;
+    transition: opacity .2s, filter .2s;
+  }
+  .controls.dimmed { opacity: .45; filter: saturate(.5); pointer-events: none; }
+
+  .timeline {
+    position: relative;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+  }
+  .track {
+    position: absolute;
+    left: 0; right: 0;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    overflow: visible;
+  }
+  .buffered {
+    position: absolute;
+    height: 100%;
+    left: 0;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.07);
+  }
+  .played {
+    position: absolute;
+    height: 100%;
+    left: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-hi));
+  }
+  .scrubber {
+    position: absolute;
+    top: 50%;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--accent);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 2px 8px rgba(0,0,0,.5);
+    transition: transform .08s;
+  }
+  .timeline:hover .scrubber { transform: translate(-50%, -50%) scale(1.18); }
+
+  .marker {
+    position: absolute;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    background: #ffcf5b;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    transition: transform .1s, background .1s;
+    box-shadow: 0 0 0 2px rgba(14,15,19,0.9);
+  }
+  .marker:hover {
+    transform: translate(-50%, -50%) scaleY(1.4);
+    background: #ffe08a;
+  }
+  .marker::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffcf5b;
+    color: #1a1206;
+    font: 600 10px/1 ui-monospace, Menlo, monospace;
+    padding: 3px 6px;
+    border-radius: 5px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .12s;
+  }
+  .marker:hover::after { opacity: 1; }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    transition: background .15s, transform .05s;
+    flex: none;
+  }
+  .icon-btn:hover { background: #262b38; }
+  .icon-btn:active { transform: scale(.94); }
+  .icon-btn svg { width: 18px; height: 18px; fill: var(--text); }
+
+  .time {
+    font: 600 13px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--muted);
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .time b { color: var(--text); font-weight: 600; }
+
+  .spacer { flex: 1; }
+
+  /* ---------- Notes panel ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 130px);
+    position: sticky;
+    top: 22px;
+    overflow: hidden;
+  }
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .panel-head h2 {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+  }
+  .count {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+
+  .notes {
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+  .notes::-webkit-scrollbar { width: 10px; }
+  .notes::-webkit-scrollbar-thumb { background: #2c313d; border-radius: 999px; border: 3px solid var(--panel); }
+
+  .empty {
+    margin: auto;
+    text-align: center;
+    color: var(--faint);
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .empty svg { width: 40px; height: 40px; stroke: var(--faint); opacity: .7; }
+  .empty .t { color: var(--muted); font-weight: 600; font-size: 14px; }
+
+  /* ---------- Note card ---------- */
+  .note {
+    background: var(--panel-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color .15s, box-shadow .15s, transform .1s;
+    animation: pop .18s ease;
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .note:hover { border-color: #39414f; }
+  .note.editing {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .thumb-wrap {
+    position: relative;
+    cursor: pointer;
+    line-height: 0;
+  }
+  .thumb-wrap img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: #000;
+  }
+  .ts-badge {
+    position: absolute;
+    left: 8px; bottom: 8px;
+    background: rgba(8, 9, 13, 0.82);
+    backdrop-filter: blur(4px);
+    color: var(--accent-hi);
+    font: 700 12px/1 ui-monospace, Menlo, monospace;
+    padding: 5px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .ts-badge svg { width: 11px; height: 11px; fill: var(--accent-hi); }
+  .thumb-wrap:hover .ts-badge { color: #fff; }
+  .thumb-wrap:hover img { opacity: .9; }
+
+  .note-body { padding: 11px 12px 12px; }
+  .note-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13.5px;
+    color: #dfe3ec;
+    min-height: 20px;
+  }
+  .note-text.placeholder { color: var(--faint); font-style: italic; }
+
+  .note-edit {
+    width: 100%;
+    background: #11131a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    padding: 9px 10px;
+    resize: vertical;
+    min-height: 64px;
+    outline: none;
+  }
+  .note-edit:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+
+  .note-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 9px;
+  }
+  .mini {
+    font-size: 12px;
+    color: var(--muted);
+    padding: 5px 9px;
+    border-radius: 6px;
+    transition: background .12s, color .12s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .mini:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+  .mini.danger:hover { color: var(--danger); background: rgba(255,93,115,0.1); }
+  .mini svg { width: 13px; height: 13px; }
+  .hint { font-size: 11px; color: var(--faint); margin-left: auto; }
+
+  /* ---------- Shortcuts footer ---------- */
+  .shortcuts {
+    border-top: 1px solid var(--border-soft);
+    padding: 11px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px 14px;
+    font-size: 11.5px;
+    color: var(--faint);
+  }
+  .shortcuts span { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* ---------- Capture flash ---------- */
+  .flash {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .flash.go { animation: flash .35s ease; }
+  @keyframes flash {
+    0% { opacity: 0; } 18% { opacity: .55; } 100% { opacity: 0; }
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 18px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    font-size: 13.5px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 60;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 940px) {
+    main { grid-template-columns: 1fr; }
+    .panel { position: static; max-height: none; }
+    .notes { max-height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      Video Note Taker
+      <div><small id="file-label">Annotate frames · timestamped notes · export PDF</small></div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn ghost" id="change-btn" hidden>Change video</button>
+    <button class="btn accent" id="export-btn" disabled>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      Export PDF
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: video + timeline -->
+  <div class="col-left">
+    <div class="stage" id="stage">
+      <label class="dropzone" id="dropzone">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l4.55-2.28A1 1 0 0121 8.62v6.76a1 1 0 01-1.45.9L15 14M4 6h9a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"/></svg>
+        <div class="big">Drop a video here, or click to choose</div>
+        <div>MP4 / WebM · stays entirely on your device — nothing is uploaded</div>
+        <input type="file" id="file-input" accept="video/*" hidden />
+      </label>
+      <video id="video" hidden playsinline></video>
+      <div class="video-error" id="video-error" hidden></div>
+    </div>
+
+    <div class="controls dimmed" id="controls">
+      <div class="timeline" id="timeline">
+        <div class="track">
+          <div class="buffered" id="buffered"></div>
+          <div class="played" id="played"></div>
+        </div>
+        <div class="scrubber" id="scrubber" style="left:0"></div>
+        <!-- markers injected here -->
+      </div>
+
+      <div class="control-row">
+        <button class="icon-btn" id="play-btn" title="Play / Pause (Space)">
+          <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <svg id="pause-icon" viewBox="0 0 24 24" hidden><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+        </button>
+        <div class="time"><b id="cur-time">0:00</b> / <span id="dur-time">0:00</span></div>
+        <div class="spacer"></div>
+        <button class="btn accent" id="add-note-btn">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add note <kbd style="margin-left:2px">N</kbd>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: notes -->
+  <aside class="panel">
+    <div class="panel-head">
+      <h2>Notes</h2>
+      <span class="count" id="count">0</span>
+    </div>
+    <div class="notes" id="notes">
+      <div class="empty" id="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><path d="M9 5a2 2 0 012-2h2a2 2 0 012 2M9 12h6M9 16h4"/></svg>
+        <div class="t">No notes yet</div>
+        <div>Press <kbd>N</kbd> while watching to capture the current frame and write a note.</div>
+      </div>
+    </div>
+    <div class="shortcuts">
+      <span><kbd>Space</kbd> play</span>
+      <span><kbd>←</kbd><kbd>→</kbd> ±5s</span>
+      <span><kbd>⇧</kbd>+<kbd>←→</kbd> ±10s</span>
+      <span><kbd>N</kbd> note</span>
+      <span><kbd>Enter</kbd> save</span>
+      <span><kbd>Esc</kbd> cancel</span>
+    </div>
+  </aside>
+</main>
+
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+<canvas id="capture-canvas" hidden></canvas>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- State ----------
+  const state = {
+    videoFileName: "",
+    videoDuration: 0,
+    notes: [],          // {id, timestamp, imageDataUrl, text, createdAt}
+    editingId: null,    // id of note currently being edited
+    objectUrl: null,
+  };
+
+  // ---------- Elements ----------
+  const $ = (id) => document.getElementById(id);
+  const fileInput = $("file-input");
+  const dropzone = $("dropzone");
+  const stage = $("stage");
+  const video = $("video");
+  const videoError = $("video-error");
+  const controls = $("controls");
+  const timeline = $("timeline");
+  const playedEl = $("played");
+  const bufferedEl = $("buffered");
+  const scrubber = $("scrubber");
+  const playBtn = $("play-btn");
+  const playIcon = $("play-icon");
+  const pauseIcon = $("pause-icon");
+  const curTimeEl = $("cur-time");
+  const durTimeEl = $("dur-time");
+  const addNoteBtn = $("add-note-btn");
+  const notesEl = $("notes");
+  const emptyEl = $("empty");
+  const countEl = $("count");
+  const exportBtn = $("export-btn");
+  const changeBtn = $("change-btn");
+  const fileLabel = $("file-label");
+  const flash = $("flash");
+  const toast = $("toast");
+  const canvas = $("capture-canvas");
+
+  // ---------- Utilities ----------
+  function formatTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    s = Math.floor(s);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+  }
+
+  // ---------- Video loading ----------
+  function loadVideoFile(file) {
+    if (!file || !file.type.startsWith("video/")) {
+      showToast("Please choose a video file.");
+      return;
+    }
+    if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+
+    // Reset notes when a new video is loaded
+    if (state.notes.length && state.videoFileName) {
+      if (!confirm("Loading a new video will clear the current notes. Continue?")) return;
+    }
+    state.notes = [];
+    state.editingId = null;
+    renderNotes();
+
+    state.objectUrl = URL.createObjectURL(file);
+    state.videoFileName = file.name;
+    video.src = state.objectUrl;
+    video.hidden = false;
+    dropzone.hidden = true;
+    videoError.hidden = true;
+    controls.classList.remove("dimmed");
+    changeBtn.hidden = false;
+    fileLabel.textContent = file.name;
+    video.load();
+  }
+
+  fileInput.addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (f) loadVideoFile(f);
+    fileInput.value = "";
+  });
+
+  // Drag & drop
+  ["dragenter", "dragover"].forEach((ev) =>
+    dropzone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropzone.classList.add("drag");
+    })
+  );
+  ["dragleave", "drop"].forEach((ev) =>
+    dropzone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("drag");
+    })
+  );
+  dropzone.addEventListener("drop", (e) => {
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadVideoFile(f);
+  });
+
+  changeBtn.addEventListener("click", () => fileInput.click());
+
+  video.addEventListener("loadedmetadata", () => {
+    state.videoDuration = video.duration;
+    durTimeEl.textContent = formatTime(video.duration);
+    updateProgress();
+    renderMarkers();
+  });
+
+  video.addEventListener("error", () => {
+    videoError.hidden = false;
+    videoError.textContent =
+      "This video could not be played. The browser may not support its codec/format (try MP4/H.264 or WebM/VP9).";
+  });
+
+  // ---------- Playback / timeline ----------
+  function updatePlayIcon() {
+    const playing = !video.paused && !video.ended;
+    playIcon.hidden = playing;
+    pauseIcon.hidden = !playing;
+  }
+
+  function updateProgress() {
+    const d = video.duration || state.videoDuration || 0;
+    const pct = d ? (video.currentTime / d) * 100 : 0;
+    playedEl.style.width = pct + "%";
+    scrubber.style.left = pct + "%";
+    curTimeEl.textContent = formatTime(video.currentTime);
+
+    try {
+      if (video.buffered.length) {
+        const end = video.buffered.end(video.buffered.length - 1);
+        bufferedEl.style.width = (d ? (end / d) * 100 : 0) + "%";
+      }
+    } catch (e) {}
+  }
+
+  video.addEventListener("timeupdate", updateProgress);
+  video.addEventListener("seeking", updateProgress);
+  video.addEventListener("play", updatePlayIcon);
+  video.addEventListener("pause", updatePlayIcon);
+  video.addEventListener("ended", updatePlayIcon);
+
+  function togglePlay() {
+    if (!video.src) return;
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  }
+  playBtn.addEventListener("click", togglePlay);
+
+  function seekTo(t) {
+    if (!video.src) return;
+    const d = video.duration || state.videoDuration || 0;
+    video.currentTime = Math.max(0, Math.min(d || t, t));
+  }
+  function seekBy(delta) { seekTo(video.currentTime + delta); }
+
+  // Scrubbing on the timeline
+  let dragging = false;
+  function timelineToTime(clientX) {
+    const rect = timeline.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const d = video.duration || state.videoDuration || 0;
+    return ratio * d;
+  }
+  timeline.addEventListener("pointerdown", (e) => {
+    if (!video.src) return;
+    if (e.target.classList.contains("marker")) return; // marker handles its own click
+    dragging = true;
+    timeline.setPointerCapture(e.pointerId);
+    seekTo(timelineToTime(e.clientX));
+  });
+  timeline.addEventListener("pointermove", (e) => {
+    if (dragging) seekTo(timelineToTime(e.clientX));
+  });
+  timeline.addEventListener("pointerup", (e) => {
+    dragging = false;
+    try { timeline.releasePointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  // ---------- Markers ----------
+  function renderMarkers() {
+    timeline.querySelectorAll(".marker").forEach((m) => m.remove());
+    const d = video.duration || state.videoDuration || 0;
+    if (!d) return;
+    state.notes.forEach((n) => {
+      const m = document.createElement("div");
+      m.className = "marker";
+      m.style.left = (n.timestamp / d) * 100 + "%";
+      m.dataset.label = formatTime(n.timestamp);
+      m.title = "Jump to " + formatTime(n.timestamp);
+      m.addEventListener("pointerdown", (e) => { e.stopPropagation(); });
+      m.addEventListener("click", (e) => {
+        e.stopPropagation();
+        seekTo(n.timestamp);
+        flashNote(n.id);
+      });
+      timeline.appendChild(m);
+    });
+  }
+
+  // ---------- Capture + add note ----------
+  function captureFrame() {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) return null;
+    const cap = 1280;
+    const scale = Math.min(1, cap / w);
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext("2d");
+    try {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/jpeg", 0.82);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function addNote() {
+    if (!video.src || !state.videoDuration) {
+      showToast("Load a video first.");
+      return;
+    }
+    if (state.editingId) return; // already capturing
+
+    video.pause();
+    flash.classList.remove("go");
+    void flash.offsetWidth;
+    flash.classList.add("go");
+
+    const img = captureFrame();
+    if (!img) {
+      showToast("Couldn't capture this frame yet — try again once the video is decoded.");
+      return;
+    }
+
+    const note = {
+      id: (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + Math.random()),
+      timestamp: video.currentTime,
+      imageDataUrl: img,
+      text: "",
+      createdAt: Date.now(),
+    };
+    state.notes.push(note);
+    sortNotes();
+    state.editingId = note.id;
+    renderNotes();
+    renderMarkers();
+
+    // focus the editor for this note
+    requestAnimationFrame(() => {
+      const ta = notesEl.querySelector(`[data-edit="${note.id}"]`);
+      if (ta) {
+        ta.focus();
+        scrollNoteIntoView(note.id);
+      }
+    });
+  }
+  addNoteBtn.addEventListener("click", addNote);
+
+  function sortNotes() {
+    state.notes.sort((a, b) => a.timestamp - b.timestamp || a.createdAt - b.createdAt);
+  }
+
+  // ---------- Note rendering ----------
+  function renderNotes() {
+    notesEl.querySelectorAll(".note").forEach((el) => el.remove());
+
+    countEl.textContent = state.notes.length;
+    exportBtn.disabled = state.notes.length === 0;
+    emptyEl.style.display = state.notes.length ? "none" : "flex";
+
+    state.notes.forEach((n) => notesEl.appendChild(noteCard(n)));
+  }
+
+  function noteCard(n) {
+    const editing = state.editingId === n.id;
+    const card = document.createElement("div");
+    card.className = "note" + (editing ? " editing" : "");
+    card.dataset.id = n.id;
+
+    // thumbnail
+    const thumb = document.createElement("div");
+    thumb.className = "thumb-wrap";
+    thumb.title = "Jump to " + formatTime(n.timestamp);
+    thumb.innerHTML = `
+      <img src="${n.imageDataUrl}" alt="frame at ${formatTime(n.timestamp)}" />
+      <span class="ts-badge">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 10V6h-2v7h6v-2z"/></svg>
+        ${formatTime(n.timestamp)}
+      </span>`;
+    thumb.addEventListener("click", () => { seekTo(n.timestamp); });
+    card.appendChild(thumb);
+
+    const body = document.createElement("div");
+    body.className = "note-body";
+
+    if (editing) {
+      const ta = document.createElement("textarea");
+      ta.className = "note-edit";
+      ta.placeholder = "Write your note…  (Enter to save · Esc to cancel)";
+      ta.dataset.edit = n.id;
+      ta.value = n.text;
+      autoGrow(ta);
+      ta.addEventListener("input", () => autoGrow(ta));
+      ta.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          saveEdit(n.id, ta.value);
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          cancelEdit(n.id);
+        }
+      });
+      body.appendChild(ta);
+
+      const actions = document.createElement("div");
+      actions.className = "note-actions";
+      const save = miniBtn("Save", iconCheck());
+      save.addEventListener("click", () => saveEdit(n.id, ta.value));
+      const cancel = miniBtn("Cancel", iconX());
+      cancel.addEventListener("click", () => cancelEdit(n.id));
+      const hint = document.createElement("span");
+      hint.className = "hint";
+      hint.innerHTML = `<kbd>Enter</kbd> save · <kbd>Esc</kbd> cancel`;
+      actions.append(save, cancel, hint);
+      body.appendChild(actions);
+    } else {
+      const text = document.createElement("div");
+      text.className = "note-text" + (n.text ? "" : " placeholder");
+      text.textContent = n.text || "No text — click Edit to add a note.";
+      body.appendChild(text);
+
+      const actions = document.createElement("div");
+      actions.className = "note-actions";
+      const edit = miniBtn("Edit", iconPencil());
+      edit.addEventListener("click", () => startEdit(n.id));
+      const del = miniBtn("Delete", iconTrash());
+      del.classList.add("danger");
+      del.addEventListener("click", () => deleteNote(n.id));
+      actions.append(edit, del);
+      body.appendChild(actions);
+    }
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function miniBtn(label, svg) {
+    const b = document.createElement("button");
+    b.className = "mini";
+    b.innerHTML = svg + label;
+    return b;
+  }
+  const iconPencil = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>`;
+  const iconTrash = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>`;
+  const iconCheck = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+  const iconX = () => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+
+  function autoGrow(ta) {
+    ta.style.height = "auto";
+    ta.style.height = Math.max(64, ta.scrollHeight) + "px";
+  }
+
+  function startEdit(id) {
+    state.editingId = id;
+    renderNotes();
+    requestAnimationFrame(() => {
+      const ta = notesEl.querySelector(`[data-edit="${id}"]`);
+      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); scrollNoteIntoView(id); }
+    });
+  }
+  function saveEdit(id, text) {
+    const n = state.notes.find((x) => x.id === id);
+    if (n) n.text = text.trim();
+    state.editingId = null;
+    renderNotes();
+  }
+  function cancelEdit(id) {
+    const n = state.notes.find((x) => x.id === id);
+    // If a freshly captured note is cancelled with no text, remove it.
+    if (n && !n.text.trim()) {
+      state.notes = state.notes.filter((x) => x.id !== id);
+      renderMarkers();
+    }
+    state.editingId = null;
+    renderNotes();
+  }
+  function deleteNote(id) {
+    state.notes = state.notes.filter((x) => x.id !== id);
+    if (state.editingId === id) state.editingId = null;
+    renderNotes();
+    renderMarkers();
+  }
+
+  function scrollNoteIntoView(id) {
+    const el = notesEl.querySelector(`.note[data-id="${id}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  function flashNote(id) {
+    const el = notesEl.querySelector(`.note[data-id="${id}"]`);
+    if (!el) return;
+    el.style.transition = "box-shadow .2s";
+    el.style.boxShadow = "0 0 0 3px var(--accent-dim)";
+    scrollNoteIntoView(id);
+    setTimeout(() => { el.style.boxShadow = ""; }, 700);
+  }
+
+  // ---------- Keyboard shortcuts ----------
+  document.addEventListener("keydown", (e) => {
+    const tag = (e.target.tagName || "").toLowerCase();
+    const typing = tag === "textarea" || tag === "input" || e.target.isContentEditable;
+
+    // When typing in the note field, let Enter/Esc be handled there; ignore everything else.
+    if (typing) return;
+
+    switch (e.key) {
+      case " ":
+      case "Spacebar":
+        if (video.src) { e.preventDefault(); togglePlay(); }
+        break;
+      case "ArrowLeft":
+        if (video.src) { e.preventDefault(); seekBy(e.shiftKey ? -10 : -5); }
+        break;
+      case "ArrowRight":
+        if (video.src) { e.preventDefault(); seekBy(e.shiftKey ? 10 : 5); }
+        break;
+      case "n":
+      case "N":
+        if (video.src) { e.preventDefault(); addNote(); }
+        break;
+    }
+  });
+
+  // ---------- PDF export ----------
+  exportBtn.addEventListener("click", exportPDF);
+
+  async function exportPDF() {
+    if (!state.notes.length) return;
+    const JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if (!JsPDFCtor) { showToast("PDF library failed to load."); return; }
+
+    exportBtn.disabled = true;
+    const original = exportBtn.innerHTML;
+    exportBtn.innerHTML = "Generating…";
+
+    try {
+      const doc = new JsPDFCtor({ unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 48;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      // Title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor(20, 22, 28);
+      doc.text("Video Notes", margin, y);
+      y += 24;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(110, 116, 130);
+      const sub = `${state.videoFileName || "video"}  ·  ${state.notes.length} note${state.notes.length > 1 ? "s" : ""}  ·  duration ${formatTime(state.videoDuration)}`;
+      doc.text(sub, margin, y);
+      y += 18;
+      doc.setDrawColor(225, 228, 234);
+      doc.line(margin, y, pageW - margin, y);
+      y += 22;
+
+      for (let i = 0; i < state.notes.length; i++) {
+        const n = state.notes[i];
+
+        // image dimensions
+        const props = doc.getImageProperties(n.imageDataUrl);
+        const imgW = contentW;
+        const imgH = (props.height / props.width) * imgW;
+
+        // measure text block
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11.5);
+        const lines = n.text ? doc.splitTextToSize(n.text, contentW) : [];
+        const textH = lines.length * 15;
+        const blockH = 20 /*ts*/ + imgH + 12 + textH + 26 /*gap*/;
+
+        // page break if needed
+        if (y + Math.min(blockH, pageH - margin * 2) > pageH - margin && y > margin) {
+          doc.addPage();
+          y = margin;
+        }
+
+        // timestamp label
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12.5);
+        doc.setTextColor(60, 90, 220);
+        doc.text(`#${i + 1}   ${formatTime(n.timestamp)}`, margin, y);
+        y += 12;
+
+        // image
+        try {
+          doc.addImage(n.imageDataUrl, "JPEG", margin, y, imgW, imgH, undefined, "FAST");
+        } catch (e) {}
+        // subtle border
+        doc.setDrawColor(220, 223, 230);
+        doc.rect(margin, y, imgW, imgH);
+        y += imgH + 14;
+
+        // text
+        if (lines.length) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(11.5);
+          doc.setTextColor(35, 38, 46);
+          doc.text(lines, margin, y);
+          y += textH;
+        } else {
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(10.5);
+          doc.setTextColor(150, 154, 165);
+          doc.text("(no note text)", margin, y);
+          y += 14;
+        }
+        y += 24;
+      }
+
+      const base = (state.videoFileName || "video").replace(/\.[^.]+$/, "");
+      doc.save(`${base}-notes.pdf`);
+      showToast("PDF exported.");
+    } catch (err) {
+      console.error(err);
+      showToast("Export failed: " + err.message);
+    } finally {
+      exportBtn.innerHTML = original;
+      exportBtn.disabled = state.notes.length === 0;
+    }
+  }
+
+  // ---------- Cleanup ----------
+  window.addEventListener("beforeunload", () => {
+    if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+  });
+
+  // initial paint
+  renderNotes();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Priority Tasks</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --crit: #dc2626;  --crit-bg: #fef2f2;  --crit-bd: #fecaca;
+    --high: #ea580c;  --high-bg: #fff7ed;  --high-bd: #fed7aa;
+    --med:  #2563eb;  --med-bg:  #eff6ff;  --med-bd:  #bfdbfe;
+    --low:  #16a34a;  --low-bg:  #f0fdf4;  --low-bd:  #bbf7d0;
+    --ink: #1e293b; --muted: #64748b; --line: #e2e8f0; --bg: #f1f5f9;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 820px; margin: 0 auto; padding: 20px;
+    line-height: 1.55; background: var(--bg); color: var(--ink);
+  }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  input, textarea, select { font-size: 16px; }
+
+  .card {
+    background: #fff; border-radius: 10px; padding: 16px;
+    margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  textarea {
+    width: 100%; padding: 12px; border: 1px solid #cbd5e1;
+    border-radius: 8px; font-family: inherit; resize: vertical; min-height: 70px;
+  }
+  textarea:focus { outline: none; border-color: var(--med); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  button {
+    background: var(--med); color: #fff; border: none; padding: 10px 18px;
+    border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600;
+  }
+  button:hover { filter: brightness(.95); }
+  button.ghost { background: #fff; color: var(--muted); border: 1px solid var(--line); font-weight: 500; }
+  button.ghost:hover { background: #f8fafc; }
+
+  .live-badge { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .live-badge b { color: var(--ink); }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .controls select, .controls input[type=text] {
+    padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff;
+  }
+  .controls input[type=text] { flex: 1; min-width: 140px; }
+
+  .stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .stat {
+    flex: 1; min-width: 110px; background: #fff; border-radius: 10px; padding: 10px 12px;
+    border-left: 4px solid var(--line); box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  .stat .n { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat.c { border-color: var(--crit); } .stat.h { border-color: var(--high); }
+  .stat.m { border-color: var(--med); }  .stat.l4 { border-color: var(--low); }
+
+  .task {
+    background: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07); border-left: 5px solid var(--line);
+    display: flex; gap: 12px; align-items: flex-start; transition: opacity .2s;
+  }
+  .task.crit { border-color: var(--crit); }
+  .task.high { border-color: var(--high); }
+  .task.med  { border-color: var(--med); }
+  .task.low  { border-color: var(--low); }
+  .task.done { opacity: .5; }
+  .task.done .txt { text-decoration: line-through; color: var(--muted); }
+
+  .check {
+    width: 22px; height: 22px; min-width: 22px; border-radius: 6px; border: 2px solid #cbd5e1;
+    cursor: pointer; margin-top: 2px; display: grid; place-items: center; color: #fff; font-size: 14px;
+  }
+  .task.done .check { background: var(--low); border-color: var(--low); }
+
+  .body { flex: 1; min-width: 0; }
+  .txt { font-size: 15px; word-wrap: break-word; }
+  .meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 7px; }
+  .pill {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: .03em;
+  }
+  .pill.crit { background: var(--crit-bg); color: var(--crit); border: 1px solid var(--crit-bd); }
+  .pill.high { background: var(--high-bg); color: var(--high); border: 1px solid var(--high-bd); }
+  .pill.med  { background: var(--med-bg);  color: var(--med);  border: 1px solid var(--med-bd); }
+  .pill.low  { background: var(--low-bg);  color: var(--low);  border: 1px solid var(--low-bd); }
+  .why { font-size: 12px; color: var(--muted); }
+  .why .kw { background: #fef9c3; color: #854d0e; padding: 0 4px; border-radius: 4px; }
+  .del { background: none; color: #cbd5e1; border: none; cursor: pointer; font-size: 18px; padding: 0 4px; }
+  .del:hover { color: var(--crit); }
+  .score { font-size: 11px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+
+  .empty { text-align: center; color: var(--muted); padding: 30px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .legend { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+  .legend code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+</style>
+</head>
+<body>
+  <h1>⚡ Smart Priority Tasks</h1>
+  <p class="sub">Type a task the way you'd say it. The list reads the <b>tone</b> — "urgent", "ASAP", "by Friday", "when I get a chance" — and sorts by inferred priority. No priority field to set.</p>
+
+  <div class="card">
+    <textarea id="input" placeholder="e.g. Need to send the signed contract to the client ASAP — they're waiting&#10;e.g. Maybe reorganize the bookshelf at some point&#10;e.g. Pay the electricity bill, due tomorrow"></textarea>
+    <div class="row">
+      <button onclick="addTask()">Add task</button>
+      <button class="ghost" onclick="addSamples()">Load examples</button>
+      <span class="live-badge" id="livePreview"></span>
+    </div>
+    <div class="hint">Tip: add several lines at once — each line becomes its own task.</div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="controls">
+    <select id="sortBy" onchange="render()">
+      <option value="priority">Sort: Priority (high→low)</option>
+      <option value="added">Sort: Recently added</option>
+    </select>
+    <select id="filterBy" onchange="render()">
+      <option value="active">Show: Active</option>
+      <option value="all">Show: All</option>
+      <option value="done">Show: Done</option>
+      <option value="crit">Show: Critical only</option>
+    </select>
+    <input type="text" id="search" placeholder="Filter text…" oninput="render()">
+    <button class="ghost" onclick="clearDone()">Clear done</button>
+  </div>
+
+  <div id="list"></div>
+
+  <details>
+    <summary>How priority is inferred</summary>
+    <div class="legend">
+      The text is scanned for signal words and patterns, each adding/subtracting weight:
+      <br>🔴 <b>Critical</b>: <code>urgent</code>, <code>asap</code>, <code>emergency</code>, <code>critical</code>, <code>now</code>, <code>immediately</code>, <code>blocker</code>, <code>!!</code>, <code>overdue</code>
+      <br>🟠 <b>High</b>: <code>important</code>, <code>deadline</code>, <code>today</code>, <code>tomorrow</code>, <code>by friday</code>, <code>client/boss waiting</code>, <code>can't ship without</code>
+      <br>🔵 <b>Medium</b>: <code>need to</code>, <code>should</code>, <code>this week</code>, <code>follow up</code> — the default lane
+      <br>🟢 <b>Low</b>: <code>someday</code>, <code>maybe</code>, <code>eventually</code>, <code>when I get a chance</code>, <code>nice to have</code>, <code>no rush</code>
+      <br><br>Deadlines in the near future and ALL-CAPS / exclamation marks bump things up. Everything runs locally in your browser; tasks persist via localStorage.
+    </div>
+  </details>
+
+<script>
+/* ---------- Priority inference engine (heuristic, offline) ---------- */
+const SIGNALS = [
+  // [regex, weight, label]  — higher weight = more urgent
+  [/\b(asap|a\.s\.a\.p)\b/i, 5, "asap"],
+  [/\b(urgent(ly)?)\b/i, 5, "urgent"],
+  [/\b(emergency|critical|crisis)\b/i, 5, "critical"],
+  [/\b(immediately|right now|right away)\b/i, 5, "immediately"],
+  [/\b(blocker|blocking|blocked)\b/i, 4, "blocker"],
+  [/\b(overdue|past due)\b/i, 5, "overdue"],
+  [/!!+/, 4, "!!"],
+  [/\b(important|priority|must)\b/i, 3, "important"],
+  [/\b(deadline|due)\b/i, 3, "deadline"],
+  [/\b(today|tonight)\b/i, 3, "today"],
+  [/\b(tomorrow)\b/i, 3, "tomorrow"],
+  [/\bby (mon|tue|wed|thu|fri|sat|sun)\w*/i, 3, "by <day>"],
+  [/\b(this morning|end of day|eod|cob)\b/i, 3, "end of day"],
+  [/\b(client|boss|customer|ceo|manager)\b.*\b(wait|expect|need|ask)/i, 4, "someone waiting"],
+  [/\b(wait(ing)? on (me|this)|they(?:'re| are) waiting)\b/i, 3, "they're waiting"],
+  [/\b(can'?t (ship|launch|release|proceed|continue) without)\b/i, 4, "blocks release"],
+  [/\b(need to|have to|got to|gotta)\b/i, 1, "need to"],
+  [/\b(should|follow up|followup|remember to)\b/i, 1, "should"],
+  [/\b(this week)\b/i, 1, "this week"],
+  // de-prioritizers (negative weight)
+  [/\b(someday|some day|eventually|one day)\b/i, -3, "someday"],
+  [/\b(maybe|might|possibly|perhaps)\b/i, -2, "maybe"],
+  [/\b(when i (get|have) (a )?(chance|time)|when possible)\b/i, -3, "when I get a chance"],
+  [/\b(nice to have|nice-to-have|would be nice)\b/i, -3, "nice to have"],
+  [/\b(no rush|no hurry|whenever|low priority|not urgent)\b/i, -3, "no rush"],
+  [/\b(at some point|sometime)\b/i, -2, "at some point"],
+];
+
+function analyze(text) {
+  let score = 0;
+  const hits = [];
+  for (const [re, w, label] of SIGNALS) {
+    if (re.test(text)) { score += w; hits.push({ label, w }); }
+  }
+  // ALL-CAPS word (3+ letters) signals shouting/urgency
+  if (/\b[A-Z]{3,}\b/.test(text) && text !== text.toLowerCase()) {
+    score += 1; hits.push({ label: "CAPS", w: 1 });
+  }
+  // map score -> bucket
+  let level;
+  if (score >= 5) level = "crit";
+  else if (score >= 3) level = "high";
+  else if (score <= -2) level = "low";
+  else level = "med";
+
+  // keep only the strongest positive cues for the "why" line
+  const why = hits.filter(h => h.w !== 0)
+                  .sort((a, b) => Math.abs(b.w) - Math.abs(a.w))
+                  .slice(0, 3).map(h => h.label);
+  return { level, score, why };
+}
+
+const RANK = { crit: 3, high: 2, med: 1, low: 0 };
+const LABELS = { crit: "Critical", high: "High", med: "Medium", low: "Low" };
+
+/* ---------- State ---------- */
+let tasks = load();
+
+function load() {
+  try { return JSON.parse(localStorage.getItem("smartTasks")) || []; }
+  catch { return []; }
+}
+function save() { localStorage.setItem("smartTasks", JSON.stringify(tasks)); }
+
+function addTask() {
+  const el = document.getElementById("input");
+  const lines = el.value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return;
+  let id = Date.now();
+  for (const line of lines) {
+    const a = analyze(line);
+    tasks.push({ id: id++, text: line, done: false, added: id, ...a });
+  }
+  el.value = "";
+  updateLivePreview();
+  save(); render();
+}
+
+function addSamples() {
+  const samples = [
+    "Send the signed contract to the client ASAP — they're waiting on it",
+    "Pay the electricity bill, it's due tomorrow",
+    "URGENT: production server is down, fix the deploy",
+    "Reply to Sarah's email about the Q3 roadmap",
+    "Should follow up with the designer this week",
+    "Maybe reorganize the bookshelf at some point",
+    "Rename the variables when I get a chance, no rush",
+    "Important: prepare slides for the board meeting on Friday",
+    "Buy more coffee filters eventually",
+    "Review the PR — it's blocking the release",
+  ];
+  let id = Date.now();
+  for (const line of samples) tasks.push({ id: id++, text: line, done: false, added: id, ...analyze(line) });
+  save(); render();
+}
+
+function toggle(id) { const t = tasks.find(t => t.id === id); if (t) { t.done = !t.done; save(); render(); } }
+function del(id) { tasks = tasks.filter(t => t.id !== id); save(); render(); }
+function clearDone() { tasks = tasks.filter(t => !t.done); save(); render(); }
+
+function updateLivePreview() {
+  const text = document.getElementById("input").value.split("\n").filter(Boolean).pop() || "";
+  const box = document.getElementById("livePreview");
+  if (!text.trim()) { box.innerHTML = ""; return; }
+  const a = analyze(text);
+  box.innerHTML = `reads as <b style="color:var(--${a.level})">${LABELS[a.level]}</b>` +
+    (a.why.length ? ` · ${a.why.join(", ")}` : "");
+}
+document.getElementById("input").addEventListener("input", updateLivePreview);
+document.getElementById("input").addEventListener("keydown", e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") addTask();
+});
+
+function escapeHtml(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function render() {
+  const sortBy = document.getElementById("sortBy").value;
+  const filterBy = document.getElementById("filterBy").value;
+  const q = document.getElementById("search").value.toLowerCase().trim();
+
+  // stats over all tasks
+  const counts = { crit: 0, high: 0, med: 0, low: 0 };
+  tasks.filter(t => !t.done).forEach(t => counts[t.level]++);
+  document.getElementById("stats").innerHTML = `
+    <div class="stat c"><div class="n">${counts.crit}</div><div class="l">Critical</div></div>
+    <div class="stat h"><div class="n">${counts.high}</div><div class="l">High</div></div>
+    <div class="stat m"><div class="n">${counts.med}</div><div class="l">Medium</div></div>
+    <div class="stat l4"><div class="n">${counts.low}</div><div class="l">Low</div></div>`;
+
+  let view = tasks.slice();
+  if (filterBy === "active") view = view.filter(t => !t.done);
+  else if (filterBy === "done") view = view.filter(t => t.done);
+  else if (filterBy === "crit") view = view.filter(t => t.level === "crit" && !t.done);
+  if (q) view = view.filter(t => t.text.toLowerCase().includes(q));
+
+  if (sortBy === "priority")
+    view.sort((a, b) => (b.done - a.done) || (RANK[b.level] - RANK[a.level]) || (b.score - a.score) || (b.added - a.added));
+  else
+    view.sort((a, b) => (a.done - b.done) || (b.added - a.added));
+
+  const list = document.getElementById("list");
+  if (!view.length) {
+    list.innerHTML = `<div class="card empty">No tasks here. Add one above — try "<i>finish the report ASAP</i>" vs "<i>tidy desk someday</i>".</div>`;
+    return;
+  }
+  list.innerHTML = view.map(t => `
+    <div class="task ${t.level} ${t.done ? "done" : ""}">
+      <div class="check" onclick="toggle(${t.id})">${t.done ? "✓" : ""}</div>
+      <div class="body">
+        <div class="txt">${escapeHtml(t.text)}</div>
+        <div class="meta">
+          <span class="pill ${t.level}">${LABELS[t.level]}</span>
+          ${t.why.length ? `<span class="why">why: ${t.why.map(w => `<span class="kw">${escapeHtml(w)}</span>`).join(" ")}</span>` : `<span class="why">default lane</span>`}
+          <span class="score">score ${t.score}</span>
+        </div>
+      </div>
+      <button class="del" onclick="del(${t.id})" title="Delete">×</button>
+    </div>`).join("");
+}
+
+render();
+</script>
+</body>
+</html>

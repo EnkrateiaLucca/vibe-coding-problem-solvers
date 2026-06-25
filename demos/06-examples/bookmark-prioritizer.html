@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookmark Prioritizer & Ranker</title>
+<style>
+    * { box-sizing: border-box; }
+    :root {
+        --bg: #f6f5f1;
+        --ink: #1f1d1a;
+        --muted: #6b6760;
+        --card: #ffffff;
+        --line: #e2ded6;
+        --accent: #2563eb;
+        --hi: #dc2626;
+        --med: #d97706;
+        --lo: #16a34a;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.55;
+        background: var(--bg);
+        color: var(--ink);
+    }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: 14px; margin: 0 0 20px; }
+    .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 16px;
+    }
+    input, textarea, select { font-size: 15px; }
+    textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-family: 'SF Mono', Monaco, Consolas, monospace;
+        resize: vertical;
+    }
+    textarea:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    button {
+        background: var(--accent); color: #fff; border: none;
+        padding: 9px 16px; border-radius: 7px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    button:hover { background: #1d4ed8; }
+    button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    button.ghost:hover { background: #f0eee9; }
+    button.danger { background: transparent; color: var(--hi); border: 1px solid #f3c6c6; }
+    button.danger:hover { background: #fef2f2; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .spacer { flex: 1; }
+    .hint { color: var(--muted); font-size: 13px; }
+    label.file {
+        display: inline-block; background: transparent; color: var(--ink);
+        border: 1px solid var(--line); padding: 9px 16px; border-radius: 7px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    label.file:hover { background: #f0eee9; }
+    label.file input { display: none; }
+
+    .stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+    .stats b { color: var(--ink); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; user-select: none; white-space: nowrap; }
+    th:hover { color: var(--ink); }
+    td { padding: 10px; border-bottom: 1px solid #f0eee9; vertical-align: top; font-size: 14px; }
+    tr.done td { opacity: .5; }
+    .rank { font-weight: 700; color: var(--muted); width: 34px; text-align: right; }
+    .title a { color: var(--ink); text-decoration: none; font-weight: 600; }
+    .title a:hover { color: var(--accent); text-decoration: underline; }
+    .url { color: var(--muted); font-size: 12px; word-break: break-all; }
+    .note-in { width: 100%; border: 1px solid transparent; background: transparent; border-radius: 5px; padding: 4px 6px; font-size: 13px; font-family: inherit; }
+    .note-in:hover { border-color: var(--line); }
+    .note-in:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+    .score-cell { display: flex; gap: 4px; }
+    .star { cursor: pointer; font-size: 17px; color: #d8d3ca; line-height: 1; }
+    .star.on { color: #f5b301; }
+
+    .pri-pills { display: flex; gap: 4px; }
+    .pill { cursor: pointer; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--line); color: var(--muted); background: #fff; }
+    .pill.hi.on { background: var(--hi); color: #fff; border-color: var(--hi); }
+    .pill.med.on { background: var(--med); color: #fff; border-color: var(--med); }
+    .pill.lo.on { background: var(--lo); color: #fff; border-color: var(--lo); }
+
+    .act { color: var(--muted); cursor: pointer; font-size: 13px; }
+    .act:hover { color: var(--hi); }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .filters input[type=search] { flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 7px; }
+    .filters select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+    .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+    .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+    .seg button { background: #fff; color: var(--ink); border: none; border-right: 1px solid var(--line); border-radius: 0; font-weight: 500; padding: 8px 12px; }
+    .seg button:last-child { border-right: none; }
+    .seg button.active { background: var(--accent); color: #fff; }
+    details summary { cursor: pointer; font-weight: 600; }
+    code { background: #f0eee9; padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+    <h1>Bookmark Prioritizer &amp; Ranker</h1>
+    <p class="sub">Import your bookmarks, score &amp; tag each by priority, then sort to get a ranked review list. Everything stays in your browser (localStorage).</p>
+
+    <div class="card" id="importCard">
+        <div class="row" style="margin-bottom:10px;">
+            <strong>Import</strong>
+            <div class="spacer"></div>
+            <span class="hint" id="importHint"></span>
+        </div>
+        <textarea id="pasteBox" placeholder="Paste bookmarks — one per line. Any of these work:
+https://example.com/article
+Great article | https://example.com/article
+https://example.com/article — my note about it
+- [Title](https://example.com/article)"></textarea>
+        <div class="row" style="margin-top:10px;">
+            <button onclick="importPaste()">Add pasted</button>
+            <label class="file">Upload bookmarks.html / .json
+                <input type="file" accept=".html,.htm,.json" onchange="importFile(event)">
+            </label>
+            <button class="ghost" onclick="toggleGuide()">📥 Get from my browser</button>
+            <div class="spacer"></div>
+        </div>
+
+        <div id="guide" style="display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
+            <div class="row" style="margin-bottom:10px;">
+                <strong>Export your bookmarks, then upload the file above</strong>
+                <div class="spacer"></div>
+                <div class="seg" id="browserSeg">
+                    <button data-b="chrome" class="active">Chrome</button>
+                    <button data-b="edge">Edge</button>
+                    <button data-b="firefox">Firefox</button>
+                    <button data-b="safari">Safari</button>
+                </div>
+            </div>
+            <p class="hint" style="margin:0 0 10px; padding:8px 12px; background:#fffbe9; border:1px solid #f3e6b3; border-radius:7px; color:#7a6a2a;">
+                ⚠️ Web pages can't read your bookmarks directly (only browser extensions can). So: export to a file in a couple of clicks, then drop it into <strong>Upload</strong> above.
+            </p>
+            <div id="guideSteps"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="card">
+        <div class="filters">
+            <input type="search" id="search" placeholder="Filter by title, url, note…" oninput="render()">
+            <select id="filterPri" onchange="render()">
+                <option value="">All priorities</option>
+                <option value="hi">High only</option>
+                <option value="med">Medium only</option>
+                <option value="lo">Low only</option>
+                <option value="none">Untagged</option>
+            </select>
+            <select id="filterDone" onchange="render()">
+                <option value="active">Hide reviewed</option>
+                <option value="all">Show all</option>
+                <option value="done">Reviewed only</option>
+            </select>
+            <div class="seg" id="sortSeg">
+                <button data-sort="smart" class="active">Smart rank</button>
+                <button data-sort="score">Score</button>
+                <button data-sort="added">Added order</button>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="rank">#</th>
+                    <th>Bookmark</th>
+                    <th>Priority</th>
+                    <th>Score</th>
+                    <th>Note</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" style="display:none;">No bookmarks yet — paste or upload some above.</div>
+    </div>
+
+    <div class="card">
+        <div class="row">
+            <strong>🗂 Suggested tab groups</strong>
+            <span class="hint">— cluster bookmarks by topic &amp; site to recreate as browser tab groups</span>
+            <div class="spacer"></div>
+            <select id="groupBy" onchange="suggestGroups()" style="padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#fff;">
+                <option value="topic">By topic + site</option>
+                <option value="domain">By website</option>
+            </select>
+            <button onclick="suggestGroups()">Suggest groups</button>
+        </div>
+        <div id="groupsOut" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+        <div class="row">
+            <strong>Export ranked list</strong>
+            <div class="spacer"></div>
+            <button class="ghost" onclick="exportMd()">Markdown</button>
+            <button class="ghost" onclick="exportCsv()">CSV</button>
+            <button class="ghost" onclick="exportJson()">JSON</button>
+            <button class="danger" onclick="clearAll()">Clear all</button>
+        </div>
+        <details style="margin-top:12px;">
+            <summary class="hint">How "Smart rank" works</summary>
+            <p class="hint">Each item gets a sort value of <code>priority weight × 10 + score</code> (High=30, Medium=20, Low=10, untagged=0; score 0–5). Reviewed items sink to the bottom. So a High-priority 4★ beats a Medium 5★. Use the column to re-sort however you like.</p>
+        </details>
+    </div>
+
+<script>
+const KEY = 'bookmark_prioritizer_v1';
+let items = load();
+let sortMode = 'smart';
+
+function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch { return []; }
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+
+function uid() { return 'b' + items.length + '_' + (items.reduce((m,i)=>Math.max(m, i._n||0),0)+1); }
+
+function addItem(title, url, note) {
+    url = (url||'').trim();
+    title = (title||'').trim();
+    if (!url && !title) return false;
+    if (url && items.some(i => i.url === url)) return false; // dedupe by url
+    const n = (items.reduce((m,i)=>Math.max(m, i._n||0),0)+1);
+    items.push({ id: uid(), _n: n, title: title || url, url, note: (note||'').trim(), pri: '', score: 0, done: false });
+    return true;
+}
+
+// ---- Import parsers ----
+function parseLine(line) {
+    line = line.trim();
+    if (!line) return null;
+    // markdown [title](url)
+    let m = line.match(/^[-*]?\s*\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/i);
+    if (m) return { title: m[1], url: m[2] };
+    // title | url   or   title — url   or  url — note
+    const urlMatch = line.match(/(https?:\/\/[^\s|]+)/i);
+    if (urlMatch) {
+        const url = urlMatch[1];
+        let rest = line.replace(url, '').replace(/^[\s|\-—:]+|[\s|\-—:]+$/g, '').trim();
+        // decide if rest is a title (before url) or note (after url)
+        const beforeUrl = line.indexOf(url) > 2;
+        if (rest) return beforeUrl ? { title: rest, url } : { title: '', url, note: rest };
+        return { title: '', url };
+    }
+    return { title: line, url: '' }; // title-only entry
+}
+
+function importPaste() {
+    const box = document.getElementById('pasteBox');
+    const lines = box.value.split('\n');
+    let added = 0;
+    for (const l of lines) {
+        const p = parseLine(l);
+        if (p && addItem(p.title, p.url, p.note)) added++;
+    }
+    box.value = '';
+    save(); render();
+    flash(`Added ${added} bookmark${added===1?'':'s'}.`);
+}
+
+function importFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        let added = 0;
+        if (file.name.match(/\.json$/i)) {
+            added = importJsonText(reader.result);
+        } else {
+            // Netscape bookmark HTML: parse <A HREF...>title</A>
+            const doc = new DOMParser().parseFromString(reader.result, 'text/html');
+            doc.querySelectorAll('a[href]').forEach(a => {
+                const href = a.getAttribute('href');
+                if (href && /^https?:/i.test(href)) {
+                    if (addItem(a.textContent, href)) added++;
+                }
+            });
+        }
+        save(); render();
+        flash(`Imported ${added} bookmark${added===1?'':'s'}.`);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+function importJsonText(txt) {
+    let added = 0;
+    try {
+        const data = JSON.parse(txt);
+        const arr = Array.isArray(data) ? data : (data.items || data.bookmarks || []);
+        for (const it of arr) {
+            const url = it.url || it.href || it.uri || '';
+            const title = it.title || it.name || it.text || '';
+            if (addItem(title, url, it.note)) {
+                const last = items[items.length-1];
+                if (it.pri) last.pri = it.pri;
+                if (typeof it.score === 'number') last.score = it.score;
+                if (it.done) last.done = true;
+                added++;
+            }
+        }
+    } catch { flash('Could not parse JSON file.'); }
+    return added;
+}
+
+// ---- Item mutations ----
+function setPri(id, pri) {
+    const it = items.find(i=>i.id===id); if (!it) return;
+    it.pri = (it.pri === pri) ? '' : pri;
+    save(); render();
+}
+function setScore(id, s) {
+    const it = items.find(i=>i.id===id); if (!it) return;
+    it.score = (it.score === s) ? s-1 : s;
+    if (it.score < 0) it.score = 0;
+    save(); render();
+}
+function setNote(id, val) {
+    const it = items.find(i=>i.id===id); if (it) { it.note = val; save(); }
+}
+function toggleDone(id) {
+    const it = items.find(i=>i.id===id); if (it) { it.done = !it.done; save(); render(); }
+}
+function removeItem(id) {
+    items = items.filter(i=>i.id!==id); save(); render();
+}
+
+// ---- Ranking ----
+const PRIW = { hi: 3, med: 2, lo: 1, '': 0 };
+function smartVal(it) { return PRIW[it.pri]*10 + it.score; }
+
+function sortedItems(list) {
+    const arr = [...list];
+    if (sortMode === 'added') arr.sort((a,b)=> (a._n||0)-(b._n||0));
+    else if (sortMode === 'score') arr.sort((a,b)=> b.score - a.score || smartVal(b)-smartVal(a));
+    else arr.sort((a,b)=> (a.done-b.done) || smartVal(b)-smartVal(a) || (a._n||0)-(b._n||0));
+    return arr;
+}
+
+// ---- Render ----
+function render() {
+    const search = document.getElementById('search').value.toLowerCase();
+    const fPri = document.getElementById('filterPri').value;
+    const fDone = document.getElementById('filterDone').value;
+
+    let list = items.filter(it => {
+        if (search && !(`${it.title} ${it.url} ${it.note}`.toLowerCase().includes(search))) return false;
+        if (fPri === 'none' ? it.pri !== '' : (fPri && it.pri !== fPri)) return false;
+        if (fDone === 'active' && it.done) return false;
+        if (fDone === 'done' && !it.done) return false;
+        return true;
+    });
+    list = sortedItems(list);
+
+    const tbody = document.getElementById('rows');
+    tbody.innerHTML = '';
+    list.forEach((it, idx) => {
+        const tr = document.createElement('tr');
+        if (it.done) tr.className = 'done';
+        const stars = [1,2,3,4,5].map(s =>
+            `<span class="star ${s<=it.score?'on':''}" onclick="setScore('${it.id}',${s})" title="${s}★">★</span>`).join('');
+        const safeTitle = escapeHtml(it.title);
+        const safeUrl = escapeHtml(it.url);
+        const titleHtml = it.url
+            ? `<a href="${safeUrl}" target="_blank" rel="noopener">${safeTitle}</a><div class="url">${safeUrl}</div>`
+            : `<span style="font-weight:600">${safeTitle}</span>`;
+        tr.innerHTML = `
+            <td class="rank">${idx+1}</td>
+            <td class="title">${titleHtml}</td>
+            <td><div class="pri-pills">
+                <span class="pill hi ${it.pri==='hi'?'on':''}" onclick="setPri('${it.id}','hi')">High</span>
+                <span class="pill med ${it.pri==='med'?'on':''}" onclick="setPri('${it.id}','med')">Med</span>
+                <span class="pill lo ${it.pri==='lo'?'on':''}" onclick="setPri('${it.id}','lo')">Low</span>
+            </div></td>
+            <td><div class="score-cell">${stars}</div></td>
+            <td><input class="note-in" value="${escapeHtml(it.note)}" placeholder="add note…"
+                onchange="setNote('${it.id}', this.value)"></td>
+            <td style="white-space:nowrap">
+                <span class="act" onclick="toggleDone('${it.id}')" title="Mark reviewed">${it.done?'↩︎':'✓'}</span>
+                &nbsp;
+                <span class="act" onclick="removeItem('${it.id}')" title="Delete">✕</span>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('empty').style.display = items.length ? 'none' : 'block';
+    renderStats();
+}
+
+function renderStats() {
+    const t = items.length;
+    const hi = items.filter(i=>i.pri==='hi').length;
+    const med = items.filter(i=>i.pri==='med').length;
+    const lo = items.filter(i=>i.pri==='lo').length;
+    const untag = items.filter(i=>i.pri==='').length;
+    const done = items.filter(i=>i.done).length;
+    document.getElementById('stats').innerHTML =
+        `<span><b>${t}</b> total</span>
+         <span style="color:var(--hi)"><b>${hi}</b> high</span>
+         <span style="color:var(--med)"><b>${med}</b> medium</span>
+         <span style="color:var(--lo)"><b>${lo}</b> low</span>
+         <span><b>${untag}</b> untagged</span>
+         <span><b>${done}</b> reviewed</span>`;
+}
+
+// ---- Export ----
+function exportMd() {
+    const ranked = sortedItems(items.filter(i=>!i.done));
+    const lines = ['# Ranked bookmarks to review', ''];
+    const label = { hi:'🔴 High', med:'🟠 Med', lo:'🟢 Low', '':'⚪️ —' };
+    ranked.forEach((it,i)=>{
+        const star = it.score ? ' '+'★'.repeat(it.score) : '';
+        const link = it.url ? `[${it.title}](${it.url})` : it.title;
+        lines.push(`${i+1}. **${label[it.pri]}**${star} — ${link}${it.note?`  \n   _${it.note}_`:''}`);
+    });
+    download(lines.join('\n'), 'ranked-bookmarks.md', 'text/markdown');
+}
+function exportCsv() {
+    const rows = [['rank','priority','score','title','url','note','reviewed']];
+    sortedItems(items).forEach((it,i)=> rows.push([i+1, it.pri||'', it.score, it.title, it.url, it.note, it.done?'yes':'no']));
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    download(csv, 'ranked-bookmarks.csv', 'text/csv');
+}
+function exportJson() {
+    download(JSON.stringify(sortedItems(items), null, 2), 'ranked-bookmarks.json', 'application/json');
+}
+function download(content, name, mime) {
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function clearAll() {
+    if (!confirm('Delete all bookmarks from this tool? Export first if you want to keep them.')) return;
+    items = []; save(); render();
+}
+
+// ---- Helpers ----
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+let flashTimer;
+function flash(msg){
+    const el = document.getElementById('importHint');
+    el.textContent = msg; clearTimeout(flashTimer);
+    flashTimer = setTimeout(()=> el.textContent = '', 3000);
+}
+
+// ---- Suggested tab groups ----
+const STOP = new Set(('a an the and or of to in for on with how why what your you my our '+
+    'is are be best top guide tutorial introduction intro using use vs com www http https html '+
+    'org net io page home docs doc blog post article video watch app web site online free new '+
+    'this that it from at by as about into more get make ai').split(' '));
+const GCOLORS = ['#dc2626','#d97706','#16a34a','#2563eb','#7c3aed','#db2777','#0891b2','#65a30d','#9333ea','#475569'];
+
+function domainOf(url){
+    try { return new URL(url).hostname.replace(/^www\./,''); } catch { return ''; }
+}
+function coreWord(domain){
+    const parts = domain.split('.');
+    return parts.length>=2 ? parts[parts.length-2] : (parts[0]||'');
+}
+function tokensOf(it){
+    const dom = domainOf(it.url);
+    const text = `${it.title} ${it.note} ${dom.replace(/\./g,' ')}`.toLowerCase();
+    const toks = (text.match(/[a-z][a-z0-9+#]{2,}/g) || []).filter(t=>!STOP.has(t));
+    const core = coreWord(dom);
+    if (core && !STOP.has(core)) toks.push(core, core); // weight the site name
+    return [...new Set(toks)];
+}
+function titleCase(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+function suggestGroups() {
+    const mode = document.getElementById('groupBy').value;
+    if (!items.length){ document.getElementById('groupsOut').innerHTML = '<p class="hint">Add some bookmarks first.</p>'; return; }
+    const groups = (mode === 'domain') ? groupByDomain() : groupByTopic();
+    renderGroups(groups);
+}
+
+function groupByDomain() {
+    const map = {};
+    items.forEach(it => {
+        const d = domainOf(it.url) || '(no url)';
+        (map[d] = map[d] || []).push(it);
+    });
+    const groups = Object.entries(map).map(([name, list]) => ({ name, list }));
+    groups.sort((a,b)=> b.list.length - a.list.length);
+    return foldSingletons(groups);
+}
+
+function groupByTopic() {
+    // greedy: repeatedly take the most shared token and pull its bookmarks into a group
+    const remaining = new Set(items.map(i=>i.id));
+    const tokenMap = new Map(items.map(i=>[i.id, tokensOf(i)]));
+    const groups = [];
+    while (remaining.size) {
+        // count token frequency over remaining items
+        const freq = {};
+        for (const id of remaining)
+            for (const t of tokenMap.get(id)) freq[t] = (freq[t]||0)+1;
+        // best token shared by >=2 remaining items
+        let best=null, bestN=1;
+        for (const [t,n] of Object.entries(freq)) if (n>bestN){ best=t; bestN=n; }
+        if (!best) break; // nothing shared anymore
+        const list = [];
+        for (const id of [...remaining])
+            if (tokenMap.get(id).includes(best)){ list.push(items.find(i=>i.id===id)); remaining.delete(id); }
+        groups.push({ name: titleCase(best), list });
+    }
+    // leftovers = singletons
+    const leftover = [...remaining].map(id=>items.find(i=>i.id===id));
+    if (leftover.length) groups.push({ name: 'Other', list: leftover, misc:true });
+    groups.sort((a,b)=> (a.misc?1:0)-(b.misc?1:0) || b.list.length - a.list.length);
+    return groups;
+}
+
+function foldSingletons(groups){
+    const keep = groups.filter(g=>g.list.length>1);
+    const singles = groups.filter(g=>g.list.length<=1).flatMap(g=>g.list);
+    if (singles.length) keep.push({ name:'Other', list:singles, misc:true });
+    return keep;
+}
+
+function renderGroups(groups) {
+    const total = groups.reduce((s,g)=>s+g.list.length,0);
+    let html = `<p class="hint" style="margin:0 0 12px;">${groups.length} group${groups.length===1?'':'s'} from ${total} bookmarks · review &amp; export below</p>`;
+    groups.forEach((g,gi)=>{
+        const color = g.misc ? '#9ca3af' : GCOLORS[gi % GCOLORS.length];
+        const ranked = sortedItems(g.list);
+        const rows = ranked.map(it=>{
+            const link = it.url ? `<a href="${escapeHtml(it.url)}" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:none;font-weight:600;">${escapeHtml(it.title)}</a>` : escapeHtml(it.title);
+            const pri = it.pri ? `<span class="pill ${it.pri} on" style="cursor:default;">${ {hi:'High',med:'Med',lo:'Low'}[it.pri] }</span>` : '';
+            const star = it.score ? `<span style="color:#f5b301;font-size:12px;">${'★'.repeat(it.score)}</span>` : '';
+            return `<li style="margin:3px 0;">${link} ${pri} ${star} <span class="url">${escapeHtml(domainOf(it.url))}</span></li>`;
+        }).join('');
+        html += `
+        <div style="border:1px solid var(--line); border-left:4px solid ${color}; border-radius:8px; padding:10px 14px; margin-bottom:10px;">
+            <div class="row" style="margin-bottom:6px;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};"></span>
+                <strong>${escapeHtml(g.name)}</strong>
+                <span class="hint">${g.list.length} tab${g.list.length===1?'':'s'}</span>
+                <div class="spacer"></div>
+                <button class="ghost" style="padding:5px 10px;font-size:12px;" onclick="copyGroupUrls(${gi})">Copy URLs</button>
+            </div>
+            <ul style="margin:0; padding-left:20px;" data-urls="${escapeHtml(ranked.filter(i=>i.url).map(i=>i.url).join('\n'))}">${rows}</ul>
+        </div>`;
+    });
+    html += `<div class="row" style="margin-top:6px;"><button class="ghost" onclick="exportGroupsMd()">Export groups as Markdown</button></div>`;
+    document.getElementById('groupsOut').innerHTML = html;
+    lastGroups = groups;
+}
+
+let lastGroups = [];
+function copyGroupUrls(gi){
+    const urls = lastGroups[gi].list.filter(i=>i.url).map(i=>i.url).join('\n');
+    navigator.clipboard.writeText(urls);
+    flash(`Copied ${lastGroups[gi].list.filter(i=>i.url).length} URLs — paste into a new window to open them as a group.`);
+}
+function exportGroupsMd(){
+    if (!lastGroups.length){ suggestGroups(); }
+    const lines = ['# Suggested tab groups',''];
+    lastGroups.forEach(g=>{
+        lines.push(`## ${g.name}  (${g.list.length})`);
+        sortedItems(g.list).forEach(it=>{
+            const link = it.url ? `[${it.title}](${it.url})` : it.title;
+            const tag = it.pri ? ` _(${ {hi:'High',med:'Med',lo:'Low'}[it.pri] })_` : '';
+            lines.push(`- ${link}${tag}`);
+        });
+        lines.push('');
+    });
+    download(lines.join('\n'), 'tab-groups.md', 'text/markdown');
+}
+
+// ---- Browser export guide ----
+const GUIDES = {
+    chrome: {
+        url: 'chrome://bookmarks/',
+        steps: [
+            'Open the Bookmark Manager (or copy the link below into the address bar).',
+            'Click the <strong>⋮</strong> menu (top-right of the manager) → <strong>Export bookmarks</strong>.',
+            'Save the <code>.html</code> file, then click <strong>Upload</strong> above and pick it.'
+        ],
+        kbd: 'Shortcut: ⌘+⌥+B (Mac) / Ctrl+Shift+O (Windows) opens the manager.'
+    },
+    edge: {
+        url: 'edge://favorites/',
+        steps: [
+            'Open <strong>Favorites</strong> (copy the link below into the address bar).',
+            'Click the <strong>⋯</strong> menu → <strong>Export favorites</strong>.',
+            'Save the <code>.html</code> file, then click <strong>Upload</strong> above and pick it.'
+        ],
+        kbd: 'Shortcut: Ctrl+Shift+O opens Favorites.'
+    },
+    firefox: {
+        url: '',
+        steps: [
+            'Press <strong>Ctrl+Shift+O</strong> (or ⌘+⌥+B on Mac) to open the Library.',
+            'Click <strong>Import and Backup</strong> → <strong>Export Bookmarks to HTML…</strong>',
+            'Save the <code>.html</code> file, then click <strong>Upload</strong> above and pick it.'
+        ],
+        kbd: ''
+    },
+    safari: {
+        url: '',
+        steps: [
+            'Menu bar: <strong>File</strong> → <strong>Export</strong> → <strong>Bookmarks…</strong>',
+            'Save the <code>Safari Bookmarks.html</code> file.',
+            'Click <strong>Upload</strong> above and pick it.'
+        ],
+        kbd: 'Safari has no in-page bookmark URL, so use the File menu.'
+    }
+};
+
+function toggleGuide() {
+    const g = document.getElementById('guide');
+    const show = g.style.display === 'none';
+    g.style.display = show ? 'block' : 'none';
+    if (show) renderGuide('chrome');
+}
+
+function renderGuide(b) {
+    const g = GUIDES[b];
+    const list = g.steps.map(s=>`<li>${s}</li>`).join('');
+    const copyRow = g.url
+        ? `<div class="row" style="margin-top:10px;">
+             <code style="flex:1; padding:8px 10px; background:#f0eee9; border-radius:6px;">${g.url}</code>
+             <button class="ghost" onclick="copyText('${g.url}', this)">Copy link</button>
+           </div>
+           <p class="hint" style="margin-top:6px;">Paste it in the address bar — browsers block pages from opening <code>${b}://</code> URLs directly.</p>`
+        : '';
+    document.getElementById('guideSteps').innerHTML =
+        `<ol style="margin:0; padding-left:20px; line-height:1.9;">${list}</ol>
+         ${g.kbd ? `<p class="hint" style="margin-top:8px;">${g.kbd}</p>` : ''}
+         ${copyRow}`;
+}
+
+async function copyText(text, btn) {
+    try { await navigator.clipboard.writeText(text); const t=btn.textContent; btn.textContent='Copied!'; setTimeout(()=>btn.textContent=t,1500); }
+    catch { btn.textContent='Copy failed'; }
+}
+
+document.getElementById('browserSeg').addEventListener('click', e=>{
+    if (e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#browserSeg button').forEach(b=>b.classList.toggle('active', b===e.target));
+    renderGuide(e.target.dataset.b);
+});
+
+document.getElementById('sortSeg').addEventListener('click', e=>{
+    if (e.target.tagName!=='BUTTON') return;
+    sortMode = e.target.dataset.sort;
+    document.querySelectorAll('#sortSeg button').forEach(b=>b.classList.toggle('active', b===e.target));
+    render();
+});
+
+render();
+</script>
+</body>
+</html>
