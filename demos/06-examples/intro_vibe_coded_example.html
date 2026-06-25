@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Split it — the receipt math nobody wants to do</title>
+<style>
+  :root{
+    --table:#14161f;        /* dark table the receipt sits on */
+    --table-2:#1c1f2b;
+    --paper:#fbfaf6;        /* receipt paper */
+    --ink:#23252e;          /* printed ink */
+    --ink-soft:#8d887d;     /* faded thermal print */
+    --rule:#e4ded0;         /* paper hairlines */
+    --money:#1f9d6b;        /* the good number */
+    --hot:#ff6b5e;          /* the tip handle */
+    --hot-deep:#e8523f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    min-height:100%;
+    background:
+      radial-gradient(120% 90% at 50% -10%, var(--table-2), var(--table) 60%);
+    color:var(--ink);
+    font-family:"Inter","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;align-items:center;justify-content:center;
+    padding:32px 18px;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;}
+
+  /* ---- the receipt ---- */
+  .receipt{
+    position:relative;
+    width:100%;max-width:380px;
+    background:var(--paper);
+    padding:30px 26px 34px;
+    box-shadow:0 30px 60px -22px rgba(0,0,0,.7), 0 2px 0 rgba(0,0,0,.2);
+    border-radius:3px 3px 0 0;
+  }
+  /* torn bottom edge */
+  .receipt::after{
+    content:"";position:absolute;left:0;right:0;bottom:-11px;height:12px;
+    background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='12'><path d='M0 0 L12 12 L24 0 Z' fill='%23fbfaf6'/></svg>") repeat-x;
+    background-size:24px 12px;
+    filter:drop-shadow(0 8px 10px rgba(0,0,0,.45));
+  }
+
+  .head{display:flex;align-items:baseline;justify-content:space-between;}
+  .head h1{
+    font-size:22px;font-weight:800;letter-spacing:-.01em;
+  }
+  .head .tag{
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
+  }
+  .sub{margin-top:4px;font-size:12.5px;color:var(--ink-soft);}
+
+  .dots{height:1px;margin:20px 0;background-image:linear-gradient(90deg,var(--rule) 0 4px,transparent 4px 9px);background-size:9px 1px;}
+
+  .row{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+  .label{font-size:13px;color:var(--ink-soft);font-weight:600;letter-spacing:.02em;}
+
+  /* ---- bill input ---- */
+  .bill-line{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+  .bill-field{display:flex;align-items:center;gap:2px;}
+  .cur{
+    font-size:30px;font-weight:700;color:var(--ink-soft);
+    cursor:pointer;user-select:none;padding:2px 4px;border-radius:6px;
+    transition:background .15s,color .15s;
+  }
+  .cur:hover{background:#efe9da;color:var(--ink);}
+  .cur:active{transform:translateY(1px);}
+  #bill{
+    width:150px;border:none;background:transparent;outline:none;
+    font-size:34px;font-weight:800;color:var(--ink);text-align:right;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;
+    border-bottom:2px dashed transparent;padding-bottom:2px;transition:border-color .15s;
+  }
+  #bill:focus{border-bottom-color:var(--hot);}
+
+  /* ---- tip ---- */
+  .tip-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;}
+  .tip-val{font-size:13px;color:var(--ink);font-weight:700;}
+  .tip-val b{color:var(--hot-deep);}
+  .presets{display:flex;gap:8px;margin-bottom:16px;}
+  .preset{
+    flex:1;border:1.5px solid var(--rule);background:transparent;color:var(--ink-soft);
+    font-weight:700;font-size:13px;padding:8px 0;border-radius:8px;cursor:pointer;
+    transition:all .14s;font-variant-numeric:tabular-nums;
+  }
+  .preset:hover{border-color:var(--ink-soft);color:var(--ink);}
+  .preset.on{background:var(--hot);border-color:var(--hot);color:#fff;box-shadow:0 4px 12px -4px var(--hot);}
+  .preset:active{transform:translateY(1px);}
+
+  .slider{position:relative;height:34px;cursor:pointer;touch-action:none;outline:none;}
+  .slider .track{position:absolute;top:50%;left:0;right:0;height:6px;transform:translateY(-50%);background:var(--rule);border-radius:99px;}
+  .slider .fill{position:absolute;top:50%;left:0;height:6px;transform:translateY(-50%);background:linear-gradient(90deg,#ffb4ab,var(--hot));border-radius:99px;}
+  .slider .handle{
+    position:absolute;top:50%;width:24px;height:24px;border-radius:50%;
+    transform:translate(-50%,-50%);background:#fff;border:2.5px solid var(--hot);
+    box-shadow:0 4px 10px -2px rgba(0,0,0,.35);transition:transform .08s;
+  }
+  .slider:active .handle,.slider:focus-visible .handle{transform:translate(-50%,-50%) scale(1.12);}
+  .slider:focus-visible{box-shadow:none;}
+  .slider:focus-visible .handle{box-shadow:0 0 0 5px rgba(255,107,94,.28),0 4px 10px -2px rgba(0,0,0,.35);}
+  .ticks{display:flex;justify-content:space-between;margin-top:2px;}
+  .ticks span{font-size:10.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+
+  /* ---- people stepper ---- */
+  .stepper{display:flex;align-items:center;gap:0;border:1.5px solid var(--rule);border-radius:10px;overflow:hidden;}
+  .stepper button{
+    width:40px;height:38px;border:none;background:transparent;cursor:pointer;
+    font-size:20px;font-weight:700;color:var(--ink);line-height:1;
+    transition:background .12s;user-select:none;
+  }
+  .stepper button:hover{background:#efe9da;}
+  .stepper button:active{background:#e6dfcd;}
+  .stepper button:disabled{color:#cfc9bb;cursor:not-allowed;background:transparent;}
+  .stepper .count{
+    min-width:42px;text-align:center;font-size:18px;font-weight:800;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- round up ---- */
+  .roundup{display:flex;align-items:center;justify-content:space-between;margin-top:18px;}
+  .toggle{position:relative;width:46px;height:26px;border-radius:99px;background:var(--rule);cursor:pointer;transition:background .18s;flex:none;}
+  .toggle::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s;}
+  .toggle.on{background:var(--money);}
+  .toggle.on::after{transform:translateX(20px);}
+
+  /* ---- total ---- */
+  .total{margin-top:8px;}
+  .per{display:flex;align-items:flex-end;justify-content:space-between;}
+  .per .cap{font-size:13px;color:var(--ink-soft);font-weight:600;}
+  .per .amt{font-size:46px;font-weight:800;color:var(--money);line-height:1;letter-spacing:-.02em;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;}
+  .breakdown{display:flex;justify-content:space-between;margin-top:14px;font-size:12.5px;color:var(--ink-soft);}
+  .breakdown b{color:var(--ink);font-weight:700;}
+  .note{margin-top:6px;font-size:11.5px;color:var(--hot-deep);min-height:15px;}
+
+  .foot{margin-top:22px;text-align:center;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#c3bcab;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+  <main class="receipt" role="application" aria-label="Bill splitter">
+    <div class="head">
+      <h1>Split it</h1>
+      <span class="tag">no. 0042</span>
+    </div>
+    <p class="sub">The receipt math nobody wants to do at the table.</p>
+
+    <div class="dots"></div>
+
+    <div class="row"><span class="label">Bill total</span></div>
+    <div class="bill-line">
+      <div class="bill-field">
+        <span class="cur" id="cur" title="Tap to change currency" role="button" tabindex="0">$</span>
+      </div>
+      <input id="bill" class="mono" inputmode="decimal" value="84.00" aria-label="Bill amount" />
+    </div>
+
+    <div class="dots"></div>
+
+    <div class="tip-head">
+      <span class="label">Tip</span>
+      <span class="tip-val"><span id="tipPct">18</span>% · <b id="tipAmt">$15.12</b></span>
+    </div>
+    <div class="presets" id="presets">
+      <button class="preset" data-p="15">15%</button>
+      <button class="preset on" data-p="18">18%</button>
+      <button class="preset" data-p="20">20%</button>
+      <button class="preset" data-p="25">25%</button>
+    </div>
+    <div class="slider" id="slider" tabindex="0" role="slider"
+         aria-valuemin="0" aria-valuemax="35" aria-valuenow="18" aria-label="Tip percent">
+      <div class="track"></div>
+      <div class="fill" id="fill"></div>
+      <div class="handle" id="handle"></div>
+    </div>
+    <div class="ticks"><span>0%</span><span>35%</span></div>
+
+    <div class="dots"></div>
+
+    <div class="row">
+      <span class="label">Splitting between</span>
+      <div class="stepper">
+        <button id="minus" aria-label="One fewer person">−</button>
+        <span class="count" id="people">4</span>
+        <button id="plus" aria-label="One more person">+</button>
+      </div>
+    </div>
+
+    <div class="roundup">
+      <span class="label">Round each share up</span>
+      <div class="toggle" id="toggle" role="switch" aria-checked="false" tabindex="0"></div>
+    </div>
+
+    <div class="dots"></div>
+
+    <div class="total">
+      <div class="per">
+        <span class="cap">Each person pays</span>
+        <span class="amt" id="perPerson">$24.78</span>
+      </div>
+      <div class="breakdown">
+        <span>Total with tip <b id="grand" class="mono">$99.12</b></span>
+        <span>Tip <b id="tipFoot" class="mono">$15.12</b></span>
+      </div>
+      <div class="note" id="note"></div>
+    </div>
+
+    <div class="foot">thank you — come again</div>
+  </main>
+
+<script>
+(() => {
+  // ---------- state ----------
+  const state = {
+    billCents: 8400,
+    tipPct: 18,
+    people: 4,
+    roundUp: false,
+    curIdx: 0,
+  };
+  const CURRENCIES = ["$", "€", "£"];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- elements ----------
+  const $ = id => document.getElementById(id);
+  const billEl = $("bill"), curEl = $("cur");
+  const presetsEl = $("presets");
+  const slider = $("slider"), fill = $("fill"), handle = $("handle");
+  const tipPctEl = $("tipPct"), tipAmtEl = $("tipAmt"), tipFootEl = $("tipFoot");
+  const peopleEl = $("people"), minusEl = $("minus"), plusEl = $("plus");
+  const toggleEl = $("toggle");
+  const perEl = $("perPerson"), grandEl = $("grand"), noteEl = $("note");
+
+  const MIN_TIP = 0, MAX_TIP = 35;
+
+  // ---------- formatting ----------
+  const sym = () => CURRENCIES[state.curIdx];
+  function fmt(cents){
+    const v = (cents/100);
+    const s = v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    return sym() + s;
+  }
+
+  // ---------- animated number rolling ----------
+  function rollTo(el, toCents){
+    const fromCents = Number(el.dataset.cents || 0);
+    el.dataset.cents = toCents;
+    if (reduce || fromCents === toCents){ el.textContent = fmt(toCents); return; }
+    const dur = 320, t0 = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    function step(now){
+      const k = Math.min(1, (now - t0) / dur);
+      const c = Math.round(fromCents + (toCents - fromCents) * ease(k));
+      el.textContent = fmt(c);
+      if (k < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ---------- core compute ----------
+  function compute(){
+    const bill = state.billCents;
+    const tip = Math.round(bill * state.tipPct / 100);
+    let total = bill + tip;
+    let per = total / state.people;
+    let note = "";
+
+    if (state.roundUp){
+      const perUp = Math.ceil(per / 100) * 100;     // round each share up to a whole unit
+      const newTotal = perUp * state.people;
+      const extra = newTotal - total;
+      per = perUp;
+      total = newTotal;
+      if (extra > 0) note = "Rounded up — that's " + fmt(extra) + " extra on top, split evenly.";
+    } else {
+      per = Math.round(per);
+    }
+    return { tip, total, per: Math.round(per), note };
+  }
+
+  function render(animate = true){
+    // tip readouts
+    tipPctEl.textContent = state.tipPct;
+    slider.setAttribute("aria-valuenow", state.tipPct);
+    // slider visuals
+    const pct = (state.tipPct - MIN_TIP) / (MAX_TIP - MIN_TIP) * 100;
+    fill.style.width = pct + "%";
+    handle.style.left = pct + "%";
+    // presets active state
+    [...presetsEl.children].forEach(b =>
+      b.classList.toggle("on", Number(b.dataset.p) === state.tipPct));
+    // people
+    peopleEl.textContent = state.people;
+    minusEl.disabled = state.people <= 1;
+    // currency glyph
+    curEl.textContent = sym();
+    // toggle
+    toggleEl.classList.toggle("on", state.roundUp);
+    toggleEl.setAttribute("aria-checked", String(state.roundUp));
+
+    const { tip, total, per, note } = compute();
+    if (animate){
+      rollTo(perEl, per);
+      rollTo(grandEl, total);
+      rollTo(tipFootEl, tip);
+      rollTo(tipAmtEl, tip);
+    } else {
+      perEl.dataset.cents = per;  perEl.textContent = fmt(per);
+      grandEl.dataset.cents = total; grandEl.textContent = fmt(total);
+      tipFootEl.dataset.cents = tip; tipFootEl.textContent = fmt(tip);
+      tipAmtEl.dataset.cents = tip; tipAmtEl.textContent = fmt(tip);
+    }
+    noteEl.textContent = note;
+  }
+
+  // ---------- bill input ----------
+  function parseBill(raw){
+    const cleaned = raw.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+    const v = parseFloat(cleaned);
+    return isNaN(v) ? 0 : Math.round(v * 100);
+  }
+  billEl.addEventListener("input", () => {
+    state.billCents = parseBill(billEl.value);
+    render();
+  });
+  billEl.addEventListener("focus", () => billEl.select());
+  billEl.addEventListener("blur", () => {
+    billEl.value = (state.billCents/100).toFixed(2);
+  });
+
+  // ---------- currency cycle ----------
+  function cycleCurrency(){
+    state.curIdx = (state.curIdx + 1) % CURRENCIES.length;
+    render(false);
+  }
+  curEl.addEventListener("click", cycleCurrency);
+  curEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " "){ e.preventDefault(); cycleCurrency(); }
+  });
+
+  // ---------- tip presets ----------
+  presetsEl.addEventListener("click", e => {
+    const b = e.target.closest(".preset");
+    if (!b) return;
+    state.tipPct = Number(b.dataset.p);
+    render();
+  });
+
+  // ---------- tip slider: drag, click, keyboard ----------
+  function setTipFromClientX(clientX){
+    const r = slider.getBoundingClientRect();
+    let k = (clientX - r.left) / r.width;
+    k = Math.max(0, Math.min(1, k));
+    let pct = Math.round(MIN_TIP + k * (MAX_TIP - MIN_TIP));
+    // gentle snap to the four presets
+    for (const p of [15, 18, 20, 25]){
+      if (Math.abs(pct - p) <= 1){ pct = p; break; }
+    }
+    state.tipPct = pct;
+    render();
+  }
+  let dragging = false;
+  slider.addEventListener("pointerdown", e => {
+    dragging = true; slider.setPointerCapture(e.pointerId);
+    slider.focus(); setTipFromClientX(e.clientX);
+  });
+  slider.addEventListener("pointermove", e => { if (dragging) setTipFromClientX(e.clientX); });
+  slider.addEventListener("pointerup", () => dragging = false);
+  slider.addEventListener("pointercancel", () => dragging = false);
+  slider.addEventListener("keydown", e => {
+    const big = e.shiftKey ? 5 : 1;
+    let p = state.tipPct;
+    if (e.key === "ArrowLeft" || e.key === "ArrowDown") p -= big;
+    else if (e.key === "ArrowRight" || e.key === "ArrowUp") p += big;
+    else if (e.key === "Home") p = MIN_TIP;
+    else if (e.key === "End") p = MAX_TIP;
+    else return;
+    e.preventDefault();
+    state.tipPct = Math.max(MIN_TIP, Math.min(MAX_TIP, p));
+    render();
+  });
+
+  // ---------- people stepper, with hold-to-repeat ----------
+  function changePeople(delta){
+    state.people = Math.max(1, state.people + delta);
+    render();
+  }
+  function holdRepeat(btn, delta){
+    let timer = null, interval = null;
+    const start = e => {
+      e.preventDefault();
+      if (btn.disabled) return;
+      changePeople(delta);
+      timer = setTimeout(() => {
+        interval = setInterval(() => {
+          if (btn.disabled){ stop(); return; }
+          changePeople(delta);
+        }, 90);
+      }, 400);
+    };
+    const stop = () => { clearTimeout(timer); clearInterval(interval); timer = interval = null; };
+    btn.addEventListener("pointerdown", start);
+    ["pointerup","pointerleave","pointercancel"].forEach(ev => btn.addEventListener(ev, stop));
+  }
+  holdRepeat(minusEl, -1);
+  holdRepeat(plusEl, +1);
+
+  // ---------- round up toggle ----------
+  function toggleRound(){ state.roundUp = !state.roundUp; render(); }
+  toggleEl.addEventListener("click", toggleRound);
+  toggleEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggleRound(); }
+  });
+
+  // ---------- init ----------
+  billEl.value = (state.billCents/100).toFixed(2);
+  render(false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Decision Deck — File Cleanup</title>
+<style>
+  :root{
+    --bg:#faf8f3; --panel:#ffffff; --ink:#1b1a17; --muted:#8b8678;
+    --line:#e9e4d8; --accent:#0f9d72; --accent-soft:#e3f5ee;
+    --keep:#0f9d72; --trash:#e5484d; --archive:#6b73ff;
+    --sort:#d98a00; --rename:#0b7bd1; --skip:#9a93a6;
+    --shadow:0 18px 50px rgba(40,35,20,.12);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:28px 20px;gap:18px}
+
+  /* ── top bar ─────────────────────────────────────────────── */
+  .topbar{width:min(720px,100%);display:flex;align-items:center;justify-content:space-between;
+    gap:14px;color:var(--muted);font-size:13px}
+  .topbar .dir{display:flex;align-items:center;gap:8px;min-width:0}
+  .topbar .dir b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .right{display:flex;gap:8px;flex:0 0 auto}
+  .ghost{background:none;border:1px solid var(--line);color:var(--muted);
+    border-radius:9px;padding:7px 12px;cursor:pointer;font:inherit;font-size:13px}
+  .ghost:hover{border-color:var(--muted);color:var(--ink)}
+
+  .progress{width:min(720px,100%);height:5px;background:#eee7d8;border-radius:99px;overflow:hidden}
+  .progress > div{height:100%;background:var(--accent);width:0%;transition:width .25s}
+
+  /* ── card ────────────────────────────────────────────────── */
+  .card{
+    width:min(720px,100%); min-height:380px; background:var(--panel);
+    border:1px solid var(--line); border-radius:22px; padding:0; overflow:hidden;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; position:relative;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card.flash-keep   {box-shadow:0 0 0 3px var(--keep), var(--shadow)}
+  .card.flash-trash  {box-shadow:0 0 0 3px var(--trash), var(--shadow)}
+  .card.flash-archive{box-shadow:0 0 0 3px var(--archive), var(--shadow)}
+  .card.flash-sort   {box-shadow:0 0 0 3px var(--sort), var(--shadow)}
+  .card.flash-rename {box-shadow:0 0 0 3px var(--rename), var(--shadow)}
+  .card.flash-skip   {box-shadow:0 0 0 3px var(--skip), var(--shadow)}
+
+  .preview{flex:1;display:flex;align-items:center;justify-content:center;
+    background:repeating-conic-gradient(#f4f1e9 0% 25%, #fbf9f4 0% 50%) 50%/22px 22px;
+    min-height:230px;max-height:300px;overflow:hidden;position:relative}
+  .preview img{max-width:100%;max-height:300px;object-fit:contain;display:block}
+  .preview pre{margin:0;padding:22px;width:100%;height:100%;max-height:300px;overflow:auto;
+    background:var(--panel);font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:#41403a;white-space:pre-wrap;word-break:break-word;text-align:left}
+  .preview .glyph{font-size:84px;line-height:1;filter:grayscale(.1)}
+  .badge{position:absolute;top:14px;left:16px;background:rgba(27,26,23,.78);color:#fff;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:99px;padding:4px 11px;font-weight:600}
+  .decided{position:absolute;top:14px;right:16px;font-size:12px;font-weight:600;
+    border-radius:99px;padding:4px 11px;color:#fff;display:none}
+  .decided.on{display:inline-block}
+
+  .info{padding:18px 24px 4px}
+  .fname{font-size:20px;font-weight:650;line-height:1.25;word-break:break-word;margin:0}
+  .meta{margin:10px 0 0;display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+  .meta b{color:#5c574b;font-weight:600}
+  .count{padding:6px 24px 18px;color:var(--muted);font-size:12px;letter-spacing:.04em}
+
+  /* ── action row ──────────────────────────────────────────── */
+  .actions{width:min(720px,100%);display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+  .act{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:12px 6px 10px;font:inherit;transition:transform .1s, border-color .1s, background .1s}
+  .act:hover{transform:translateY(-2px)}
+  .act .ico{font-size:21px;line-height:1}
+  .act .lbl{font-size:12px;font-weight:600;color:var(--ink)}
+  .act .key{font-size:10px;color:var(--muted);letter-spacing:.06em}
+  .act[data-a="keep"]:hover   {border-color:var(--keep);   background:#eafaf4}
+  .act[data-a="trash"]:hover  {border-color:var(--trash);  background:#fdeeee}
+  .act[data-a="archive"]:hover{border-color:var(--archive);background:#eeeffe}
+  .act[data-a="sort"]:hover   {border-color:var(--sort);   background:#fdf3e2}
+  .act[data-a="rename"]:hover {border-color:var(--rename); background:#e9f4fd}
+  .act[data-a="skip"]:hover   {border-color:var(--skip);   background:#f3f1f5}
+
+  .nav{width:min(720px,100%);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .nav .hint{color:var(--muted);font-size:12px}
+  .primary{background:var(--accent);color:#fff;border:none;border-radius:11px;
+    padding:11px 20px;font:inherit;font-weight:600;cursor:pointer}
+  .primary:hover{filter:brightness(1.06)}
+  .primary:disabled{opacity:.4;cursor:not-allowed}
+
+  /* ── welcome ─────────────────────────────────────────────── */
+  .welcome{width:min(560px,100%);text-align:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:22px;padding:48px 40px;box-shadow:var(--shadow)}
+  .welcome h1{font-size:30px;margin:0 0 6px;letter-spacing:-.02em}
+  .welcome p{color:var(--muted);margin:0 auto 22px;max-width:42ch}
+  .welcome .legend{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;text-align:left;
+    margin:26px auto 4px;max-width:430px;font-size:13.5px}
+  .welcome .legend div{display:flex;gap:9px;align-items:flex-start}
+  .welcome .legend .e{font-size:17px;width:22px;flex:0 0 auto;text-align:center}
+  .welcome .legend b{font-weight:650}
+  .welcome .legend span{color:var(--muted)}
+  .privacy{margin-top:26px;font-size:12px;color:var(--muted)}
+  .privacy b{color:var(--accent)}
+
+  /* ── summary / modal ─────────────────────────────────────── */
+  .scrim{position:fixed;inset:0;background:rgba(30,26,15,.42);display:none;
+    align-items:center;justify-content:center;padding:24px;z-index:20}
+  .scrim.on{display:flex}
+  .modal{background:var(--panel);border-radius:20px;max-width:560px;width:100%;
+    padding:30px 30px 24px;box-shadow:var(--shadow);max-height:84vh;overflow:auto}
+  .modal h3{margin:0 0 14px;font-size:20px}
+  .planrow{display:flex;align-items:center;justify-content:space-between;
+    padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .planrow:last-of-type{border-bottom:none}
+  .planrow .n{font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+  .group{margin:14px 0;font-size:13px}
+  .group .files{color:var(--muted);font-size:12.5px;margin-top:4px;line-height:1.7;word-break:break-word}
+  .modalbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+  .danger{background:var(--trash);color:#fff;border:none;border-radius:11px;padding:11px 20px;font:inherit;font-weight:600;cursor:pointer}
+  .empty{color:var(--muted);font-size:14px;text-align:center;padding:20px}
+  code{background:#f1ede2;border-radius:5px;padding:1px 6px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- welcome screen is injected here; deck UI swaps in after a folder is chosen -->
+</div>
+
+<!-- summary / apply modal -->
+<div class="scrim" id="scrim">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   DECISION DECK — File Cleanup edition
+   A single-file HTML tool. Point it at a folder, swipe through every
+   file, and assign one of six decisions. Then apply the moves in the
+   browser (Chrome/Edge) or export a shell script to run yourself.
+
+   Nothing is uploaded. Files are read locally via the File System
+   Access API; the page never talks to a server.
+
+   The six decisions (extends the classic keep/delete swipe):
+     keep    — leave the file where it is              →  (right swipe)
+     trash   — move to  _trash/                         →  (left swipe)
+     archive — move to  _archive/
+     sort    — move to a subfolder you name (categorize)
+     rename  — rename the file in place
+     skip    — decide later (no action on apply)
+   ════════════════════════════════════════════════════════════════ */
+
+const STORAGE = "decision_deck_filecleanup_v1";
+const HAS_FS  = "showDirectoryPicker" in window;
+
+const ACTIONS = {
+  keep:    {label:"Keep",    ico:"✓", key:"K", color:"var(--keep)",    dest:null},
+  trash:   {label:"Trash",   ico:"🗑", key:"D", color:"var(--trash)",   dest:"_trash"},
+  archive: {label:"Archive", ico:"📦", key:"A", color:"var(--archive)", dest:"_archive"},
+  sort:    {label:"Sort →",  ico:"🗂", key:"M", color:"var(--sort)",    dest:"?"},
+  rename:  {label:"Rename",  ico:"✏️", key:"R", color:"var(--rename)",  dest:null},
+  skip:    {label:"Later",   ico:"⏭", key:"X", color:"var(--skip)",    dest:null},
+};
+
+const TEXT_EXT  = new Set("txt md markdown js mjs ts tsx jsx json csv tsv html htm css scss xml yml yaml py rb go rs java c h cpp sh bash zsh sql log ini toml env conf cfg".split(" "));
+const IMG_EXT   = new Set("png jpg jpeg gif webp svg bmp ico avif".split(" "));
+const GLYPHS    = {pdf:"📕", zip:"🗜", rar:"🗜", mp4:"🎬", mov:"🎬", avi:"🎬", mkv:"🎬",
+                   mp3:"🎵", wav:"🎵", m4a:"🎵", flac:"🎵", doc:"📄", docx:"📄",
+                   xls:"📊", xlsx:"📊", ppt:"📑", pptx:"📑", key:"📑", dmg:"💿", app:"📦"};
+
+let dirHandle = null;     // FileSystemDirectoryHandle (FS API path)
+let folderName = "";
+let files = [];           // [{name, handle?, file?, ext, size, mtime}]
+let decisions = {};       // { "<folder>::<file>": "keep" | ... , plus "<key>__rename": newName, "<key>__sort": folder }
+let i = 0;
+
+const stage = document.getElementById("stage");
+const scrim = document.getElementById("scrim");
+const modal = document.getElementById("modal");
+
+/* ── persistence ─────────────────────────────────────────────── */
+function loadStore(){ try{ decisions = JSON.parse(localStorage.getItem(STORAGE)||"{}"); }catch(e){ decisions={}; } }
+function save(){ localStorage.setItem(STORAGE, JSON.stringify(decisions)); }
+function dkey(name){ return folderName + "::" + name; }
+
+/* ── helpers ─────────────────────────────────────────────────── */
+function ext(name){ const m = name.toLowerCase().match(/\.([a-z0-9]+)$/); return m ? m[1] : ""; }
+function human(bytes){
+  if (bytes == null) return "—";
+  const u = ["B","KB","MB","GB"]; let n = bytes, k = 0;
+  while (n >= 1024 && k < u.length-1){ n /= 1024; k++; }
+  return (k===0 ? n : n.toFixed(n<10?1:0)) + " " + u[k];
+}
+function fmtDate(ms){ if(!ms) return "—"; const d = new Date(ms);
+  return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); }
+function esc(s){ return s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+/* ════════════════════════════════════════════════════════════════
+   WELCOME SCREEN
+   ════════════════════════════════════════════════════════════════ */
+function renderWelcome(){
+  const legend = Object.entries(ACTIONS).map(([k,a])=>`
+    <div><span class="e">${a.ico}</span><div><b>${a.label}</b><br><span>${
+      k==="keep"?"leave it in place":
+      k==="trash"?"move to <code>_trash/</code>":
+      k==="archive"?"move to <code>_archive/</code>":
+      k==="sort"?"move to a folder you name":
+      k==="rename"?"give it a new name":
+      "skip — decide it later"}</span></div></div>`).join("");
+
+  stage.innerHTML = `
+    <div class="welcome">
+      <h1>Decision Deck</h1>
+      <p>Triage a messy folder one file at a time. Swipe right to keep,
+         left to trash — or pick one of four other moves. Then apply it all at once.</p>
+      <button class="primary" id="pick">📂 Choose a folder…</button>
+      <div class="legend">${legend}</div>
+      <div class="privacy">🔒 <b>100% local.</b> Files never leave your computer —
+        ${HAS_FS ? "the page reads them directly through the browser."
+                 : "this browser can preview & export a script (use Chrome/Edge to apply changes in-place)."}</div>
+    </div>
+    ${HAS_FS ? "" : `<input id="fallbackInput" type="file" webkitdirectory multiple hidden>`}
+  `;
+
+  if (HAS_FS){
+    document.getElementById("pick").onclick = pickFolderFS;
+  } else {
+    const inp = document.getElementById("fallbackInput");
+    document.getElementById("pick").onclick = ()=> inp.click();
+    inp.onchange = ()=> loadFromInput(inp.files);
+  }
+}
+
+/* ── load: File System Access API (read + write) ─────────────── */
+async function pickFolderFS(){
+  let handle;
+  try { handle = await window.showDirectoryPicker(); }
+  catch(e){ return; } // user cancelled
+  dirHandle = handle;
+  folderName = handle.name;
+  files = [];
+  for await (const [name, h] of handle.entries()){
+    if (h.kind !== "file") continue;
+    if (name.startsWith(".") || name.startsWith("_")) continue; // skip dotfiles & our own dest folders
+    files.push({name, handle:h, ext:ext(name), size:null, mtime:null});
+  }
+  // pull size/mtime lazily-ish (cheap enough for a folder)
+  await Promise.all(files.map(async f=>{
+    try{ const file = await f.handle.getFile(); f.size = file.size; f.mtime = file.lastModified; }catch(e){}
+  }));
+  startDeck();
+}
+
+/* ── load: <input webkitdirectory> fallback (read only) ──────── */
+function loadFromInput(fileList){
+  dirHandle = null;
+  const arr = [...fileList].filter(f=>{
+    const top = f.webkitRelativePath.split("/")[1] || f.name; // only top-level files
+    const isTop = f.webkitRelativePath.split("/").length === 2;
+    return isTop && !f.name.startsWith(".") && !f.name.startsWith("_");
+  });
+  folderName = (fileList[0]?.webkitRelativePath.split("/")[0]) || "folder";
+  files = arr.map(f=>({name:f.name, file:f, ext:ext(f.name), size:f.size, mtime:f.lastModified}));
+  startDeck();
+}
+
+function startDeck(){
+  if (!files.length){
+    stage.innerHTML = `<div class="welcome"><h1>Empty folder</h1>
+      <p>No loose files found at the top level of <b>${esc(folderName)}</b>.</p>
+      <button class="primary" onclick="location.reload()">← Choose another</button></div>`;
+    return;
+  }
+  files.sort((a,b)=> a.name.localeCompare(b.name));
+  i = 0;
+  // jump to first undecided file for resume-friendliness
+  const firstUndecided = files.findIndex(f=>!decisions[dkey(f.name)]);
+  if (firstUndecided > 0) i = firstUndecided;
+  renderDeck();
+  render();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   DECK UI
+   ════════════════════════════════════════════════════════════════ */
+function renderDeck(){
+  const acts = Object.entries(ACTIONS).map(([k,a])=>`
+    <button class="act" data-a="${k}">
+      <span class="ico">${a.ico}</span>
+      <span class="lbl">${a.label}</span>
+      <span class="key">${a.key}</span>
+    </button>`).join("");
+
+  stage.innerHTML = `
+    <div class="topbar">
+      <div class="dir">📂 <b id="dirName"></b></div>
+      <div class="right">
+        <button class="ghost" id="summaryBtn">Summary (S)</button>
+        <button class="ghost" id="switchBtn">Switch folder</button>
+      </div>
+    </div>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="card" id="card"></div>
+    <div class="actions" id="actions">${acts}</div>
+    <div class="nav">
+      <span class="hint">← / → navigate &nbsp;·&nbsp; press a letter to decide &nbsp;·&nbsp; U = undo</span>
+      <button class="primary" id="applyBtn">Review & apply →</button>
+    </div>
+  `;
+  document.getElementById("dirName").textContent = folderName;
+  document.getElementById("summaryBtn").onclick = ()=>openSummary();
+  document.getElementById("applyBtn").onclick   = ()=>openSummary();
+  document.getElementById("switchBtn").onclick  = ()=>location.reload();
+  document.querySelectorAll(".act").forEach(b=> b.onclick = ()=>decide(b.dataset.a));
+}
+
+async function render(){
+  const f = files[i];
+  const card = document.getElementById("card");
+  const decided = decisions[dkey(f.name)];
+  const a = decided ? ACTIONS[decided] : null;
+
+  // metadata + shell
+  card.innerHTML = `
+    <div class="preview" id="preview"><span class="glyph">📄</span></div>
+    <div class="info">
+      <p class="fname">${esc(f.name)}</p>
+      <div class="meta">
+        <span><b>Type</b> ${f.ext ? "."+f.ext : "file"}</span>
+        <span><b>Size</b> ${human(f.size)}</span>
+        <span><b>Modified</b> ${fmtDate(f.mtime)}</span>
+      </div>
+    </div>
+    <div class="count">FILE ${String(i+1).padStart(2,"0")} / ${String(files.length).padStart(2,"0")}
+      &nbsp;·&nbsp; ${Object.keys(currentDecisions()).length} decided</div>
+    <span class="decided" id="decidedBadge"></span>
+  `;
+  // status badge
+  const badge = document.getElementById("decidedBadge");
+  if (a){
+    badge.className = "decided on";
+    badge.style.background = a.color;
+    let extra = "";
+    if (decided==="rename") extra = " → " + (decisions[dkey(f.name)+"__rename"]||"?");
+    if (decided==="sort")   extra = " → " + (decisions[dkey(f.name)+"__sort"]||"?") + "/";
+    badge.textContent = a.ico + " " + a.label + extra;
+  }
+  document.getElementById("bar").style.width = ((i+1)/files.length*100) + "%";
+
+  await renderPreview(f);
+}
+
+function currentDecisions(){
+  const out = {};
+  for (const f of files){ const d = decisions[dkey(f.name)]; if (d) out[f.name] = d; }
+  return out;
+}
+
+async function getFileObj(f){
+  if (f.file) return f.file;
+  if (f.handle){ const file = await f.handle.getFile(); f.file = file; return file; }
+  return null;
+}
+
+async function renderPreview(f){
+  const box = document.getElementById("preview");
+  const e = f.ext;
+  try{
+    if (IMG_EXT.has(e)){
+      const file = await getFileObj(f);
+      const url = URL.createObjectURL(file);
+      box.innerHTML = `<span class="badge">image</span><img src="${url}" onload="URL.revokeObjectURL(this.src)">`;
+      return;
+    }
+    if (TEXT_EXT.has(e)){
+      const file = await getFileObj(f);
+      const slice = await file.slice(0, 4000).text();
+      box.innerHTML = `<span class="badge">${e}</span><pre>${esc(slice)}${file.size>4000?"\n\n…":""}</pre>`;
+      return;
+    }
+    const glyph = GLYPHS[e] || "📄";
+    box.innerHTML = `<span class="badge">${e||"file"}</span><span class="glyph">${glyph}</span>`;
+  }catch(err){
+    box.innerHTML = `<span class="glyph">⚠️</span>`;
+  }
+}
+
+/* ── make a decision ─────────────────────────────────────────── */
+function decide(action){
+  const f = files[i];
+  const key = dkey(f.name);
+
+  if (action === "rename"){
+    const cur = f.name;
+    const next = prompt("Rename file to:", cur);
+    if (!next || next === cur) return;
+    decisions[key+"__rename"] = next.trim();
+  } else { delete decisions[key+"__rename"]; }
+
+  if (action === "sort"){
+    const folder = prompt("Move into which subfolder? (will be created)", decisions[key+"__sort"]||"");
+    if (!folder) return;
+    decisions[key+"__sort"] = folder.trim().replace(/^\/+|\/+$/g,"");
+  } else { delete decisions[key+"__sort"]; }
+
+  decisions[key] = action;
+  save();
+  flash(action);
+  render();
+  setTimeout(()=>{ if (i < files.length-1) { i++; render(); } else openSummary(); }, 200);
+}
+
+function undo(){
+  const key = dkey(files[i].name);
+  delete decisions[key]; delete decisions[key+"__rename"]; delete decisions[key+"__sort"];
+  save(); render();
+}
+
+function flash(action){
+  const card = document.getElementById("card");
+  card.className = "card flash-" + action;
+  setTimeout(()=> card.className = "card", 220);
+}
+
+function next(){ if (i<files.length-1){ i++; render(); } }
+function prev(){ if (i>0){ i--; render(); } }
+
+/* ── keyboard ────────────────────────────────────────────────── */
+window.addEventListener("keydown", e=>{
+  if (scrim.classList.contains("on")){ if (e.key==="Escape") closeModal(); return; }
+  if (!files.length) return;
+  const k = e.key.toLowerCase();
+  if (e.key==="ArrowRight") next();
+  else if (e.key==="ArrowLeft") prev();
+  else if (k==="k") decide("keep");
+  else if (k==="d") decide("trash");
+  else if (k==="a") decide("archive");
+  else if (k==="m") decide("sort");
+  else if (k==="r") decide("rename");
+  else if (k==="x") decide("skip");
+  else if (k==="u") undo();
+  else if (k==="s") openSummary();
+});
+
+/* ════════════════════════════════════════════════════════════════
+   SUMMARY / APPLY MODAL
+   ════════════════════════════════════════════════════════════════ */
+function plan(){
+  // group files by action
+  const groups = {};
+  for (const f of files){
+    const d = decisions[dkey(f.name)];
+    if (!d) continue;
+    (groups[d] = groups[d] || []).push(f);
+  }
+  return groups;
+}
+
+function openSummary(){
+  const groups = plan();
+  const total = Object.values(groups).reduce((n,g)=>n+g.length,0);
+  const undecided = files.length - total;
+  const willChange = (groups.trash?.length||0)+(groups.archive?.length||0)+
+                     (groups.sort?.length||0)+(groups.rename?.length||0);
+
+  if (total === 0){
+    modal.innerHTML = `<h3>Nothing decided yet</h3>
+      <div class="empty">Swipe through the files and assign a decision to each.<br>
+      Right = Keep, Left = Trash, or use the buttons below the card.</div>
+      <div class="modalbtns"><button class="ghost" onclick="closeModal()">Close</button></div>`;
+    scrim.classList.add("on"); return;
+  }
+
+  const order = ["trash","archive","sort","rename","keep","skip"];
+  const rows = order.filter(k=>groups[k]).map(k=>{
+    const a = ACTIONS[k];
+    const list = groups[k].map(f=>{
+      let suffix = "";
+      if (k==="rename") suffix = ` → <code>${esc(decisions[dkey(f.name)+"__rename"]||"?")}</code>`;
+      if (k==="sort")   suffix = ` → <code>${esc(decisions[dkey(f.name)+"__sort"]||"?")}/</code>`;
+      return esc(f.name)+suffix;
+    }).join("<br>");
+    const destNote = a.dest && a.dest!=="?" ? ` <span style="color:var(--muted)">→ ${a.dest}/</span>`
+                   : k==="sort" ? ` <span style="color:var(--muted)">→ subfolders</span>` : "";
+    return `<div class="group">
+      <div class="planrow">
+        <span class="pill" style="color:${a.color}">${a.ico} ${a.label}${destNote}</span>
+        <span class="n">${groups[k].length}</span>
+      </div>
+      <div class="files">${list}</div>
+    </div>`;
+  }).join("");
+
+  const applyNote = HAS_FS
+    ? (willChange===0
+        ? `<span style="color:var(--muted)">Only “keep / later” decisions — nothing to move.</span>`
+        : `Applying will move <b>${willChange}</b> file${willChange>1?"s":""} inside <b>${esc(folderName)}</b>. Reversible: trashed/archived files sit in subfolders until you delete them.`)
+    : `<span style="color:var(--muted)">This browser can't write files. Export the script and run it in your terminal.</span>`;
+
+  modal.innerHTML = `
+    <h3>Review your plan</h3>
+    <div style="color:var(--muted);font-size:13px;margin:-6px 0 8px">
+      ${total} decided · ${undecided} still undecided</div>
+    ${rows}
+    <div style="font-size:13px;margin-top:14px;line-height:1.5">${applyNote}</div>
+    <div class="modalbtns">
+      <button class="ghost" onclick="closeModal()">Keep swiping</button>
+      <button class="ghost" id="exportSh">⬇ Export script</button>
+      <button class="ghost" id="exportJson">⬇ Export plan.json</button>
+      ${HAS_FS ? `<button class="${willChange?'danger':'primary'}" id="applyNow" ${willChange?'':'disabled'}>Apply ${willChange||''} change${willChange>1?'s':''}</button>` : ""}
+    </div>
+  `;
+  document.getElementById("exportSh").onclick   = exportScript;
+  document.getElementById("exportJson").onclick = exportJson;
+  if (HAS_FS && willChange) document.getElementById("applyNow").onclick = applyChanges;
+  scrim.classList.add("on");
+}
+
+function closeModal(){ scrim.classList.remove("on"); if (files.length) render(); }
+scrim.addEventListener("click", e=>{ if (e.target===scrim) closeModal(); });
+
+/* ── exports ─────────────────────────────────────────────────── */
+function download(name, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function exportScript(){
+  const groups = plan();
+  const q = s => "'" + s.replace(/'/g, "'\\''") + "'";
+  let sh = `#!/usr/bin/env bash\n`;
+  sh += `# Decision Deck — cleanup plan for "${folderName}"\n`;
+  sh += `# Review before running.  Run from inside the folder:  bash cleanup.sh\n`;
+  sh += `set -euo pipefail\n\n`;
+  const mkdirs = new Set();
+  const lines = [];
+  for (const f of files){
+    const d = decisions[dkey(f.name)];
+    if (!d || d==="keep" || d==="skip") continue;
+    if (d==="trash"){ mkdirs.add("_trash"); lines.push(`mv -i ${q(f.name)} _trash/`); }
+    else if (d==="archive"){ mkdirs.add("_archive"); lines.push(`mv -i ${q(f.name)} _archive/`); }
+    else if (d==="sort"){ const dest = decisions[dkey(f.name)+"__sort"]||"sorted"; mkdirs.add(dest); lines.push(`mv -i ${q(f.name)} ${q(dest)}/`); }
+    else if (d==="rename"){ const nn = decisions[dkey(f.name)+"__rename"]; lines.push(`mv -i ${q(f.name)} ${q(nn)}`); }
+  }
+  [...mkdirs].forEach(d=> sh += `mkdir -p ${q(d)}\n`);
+  sh += "\n" + lines.join("\n") + "\n\necho '✓ Cleanup complete.'\n";
+  download("cleanup.sh", sh, "text/x-shellscript");
+}
+
+function exportJson(){
+  const out = {folder:folderName, generated:"export", decisions:[]};
+  for (const f of files){
+    const d = decisions[dkey(f.name)];
+    if (!d) continue;
+    const rec = {file:f.name, action:d};
+    if (d==="rename") rec.newName = decisions[dkey(f.name)+"__rename"];
+    if (d==="sort")   rec.folder  = decisions[dkey(f.name)+"__sort"];
+    out.decisions.push(rec);
+  }
+  download("plan.json", JSON.stringify(out, null, 2), "application/json");
+}
+
+/* ── apply changes in-browser via File System Access API ─────── */
+async function applyChanges(){
+  const groups = plan();
+  const btn = document.getElementById("applyNow");
+  btn.disabled = true; btn.textContent = "Working…";
+
+  let done = 0, errors = [];
+  const tasks = [];
+  for (const f of files){
+    const d = decisions[dkey(f.name)];
+    if (!d || d==="keep" || d==="skip") continue;
+    tasks.push({f, d});
+  }
+
+  for (const {f, d} of tasks){
+    try{
+      if (d==="rename"){
+        await moveEntry(f, null, decisions[dkey(f.name)+"__rename"]);
+      } else if (d==="sort"){
+        await moveEntry(f, decisions[dkey(f.name)+"__sort"], f.name);
+      } else if (d==="trash"){
+        await moveEntry(f, "_trash", f.name);
+      } else if (d==="archive"){
+        await moveEntry(f, "_archive", f.name);
+      }
+      // clear decision now that it's applied
+      const key = dkey(f.name);
+      delete decisions[key]; delete decisions[key+"__rename"]; delete decisions[key+"__sort"];
+      done++;
+      btn.textContent = `Working… ${done}/${tasks.length}`;
+    }catch(err){ errors.push(f.name + ": " + err.message); }
+  }
+  save();
+
+  // refresh file list (re-scan top level)
+  await rescan();
+
+  modal.innerHTML = `
+    <h3>✓ Done</h3>
+    <div style="font-size:14px;line-height:1.6">
+      Applied <b>${done}</b> change${done!==1?"s":""} inside <b>${esc(folderName)}</b>.
+      ${errors.length ? `<br><br><b style="color:var(--trash)">${errors.length} failed:</b><br>
+        <span style="color:var(--muted);font-size:12.5px">${errors.map(esc).join("<br>")}</span>` : ""}
+      <br><br><span style="color:var(--muted)">Trashed &amp; archived files were moved into subfolders —
+      delete those folders yourself when you're sure.</span>
+    </div>
+    <div class="modalbtns">
+      <button class="primary" onclick="closeModal()">${files.length?'Keep going →':'Finish'}</button>
+    </div>`;
+}
+
+// move within the picked directory: destFolder=null means rename in place (newName given)
+async function moveEntry(f, destFolder, newName){
+  const file = await f.handle.getFile();
+  const buf  = await file.arrayBuffer();
+  let targetDir = dirHandle;
+  if (destFolder){
+    // support nested "a/b" sort folders
+    for (const part of destFolder.split("/").filter(Boolean)){
+      targetDir = await targetDir.getDirectoryHandle(part, {create:true});
+    }
+  }
+  const destName = newName || f.name;
+  const destHandle = await targetDir.getFileHandle(destName, {create:true});
+  const w = await destHandle.createWritable();
+  await w.write(buf); await w.close();
+  await dirHandle.removeEntry(f.name);
+}
+
+async function rescan(){
+  if (!dirHandle){ return; }
+  files = [];
+  for await (const [name, h] of dirHandle.entries()){
+    if (h.kind !== "file") continue;
+    if (name.startsWith(".") || name.startsWith("_")) continue;
+    files.push({name, handle:h, ext:ext(name), size:null, mtime:null});
+  }
+  await Promise.all(files.map(async f=>{
+    try{ const file = await f.handle.getFile(); f.size = file.size; f.mtime = file.lastModified; }catch(e){}
+  }));
+  files.sort((a,b)=> a.name.localeCompare(b.name));
+  if (!files.length){
+    stage.innerHTML = `<div class="welcome"><h1>🎉 All clean</h1>
+      <p>Every loose file in <b>${esc(folderName)}</b> has been sorted.</p>
+      <button class="primary" onclick="location.reload()">← Triage another folder</button></div>`;
+    return;
+  }
+  i = Math.min(i, files.length-1);
+  renderDeck(); render();
+}
+
+/* ── boot ────────────────────────────────────────────────────── */
+loadStore();
+renderWelcome();
+</script>
+</body>
+</html>

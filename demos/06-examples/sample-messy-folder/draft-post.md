@@ -1,0 +1,3 @@
+# Draft blog post
+
+Vibe coding is...

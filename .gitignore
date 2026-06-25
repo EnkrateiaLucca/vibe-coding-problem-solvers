@@ -24,3 +24,6 @@ venv/
 # IDE
 .idea/
 .vscode/
+
+# Video-quiz demo sample assets (large media + generated transcript, not for repo)
+demos/06-examples/video-quiz-app/demo-sample/
